@@ -1,4 +1,4 @@
-# Personal Memory & Emotional Timeline System
+<img width="654" height="352" alt="image" src="https://github.com/user-attachments/assets/fef5eef4-8221-417a-82a7-8c1ae894cb61" /># Personal Memory & Emotional Timeline System
 
 > Your life, organized. Your memories, preserved. Your emotions, understood.
 
@@ -72,10 +72,11 @@ Hệ thống được thiết kế và phát triển tập trung xoay quanh mô 
        │  CẢM XÚC NGƯỜI DÙNG  │   KÝ ỨC TƯƠNG LAI     │
        │   (Mood Tracking)    │   (Time Capsule)      │
        └──────────────────────┴──────────────────────┘
+```
 
 ---
 
-##  Kiến trúc đề xuất (Tech Stack)
+## Kiến trúc đề xuất (Tech Stack)
 
 | Thành phần   | Công nghệ đề xuất                      |
 | :----------- | :------------------------------------- |
