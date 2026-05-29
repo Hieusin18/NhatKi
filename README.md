@@ -58,7 +58,7 @@ Dự án hướng tới việc xây dựng một hệ thống **Personal Memory 
 
 ---
 
-##  Ý tưởng cốt lõi của hệ thống
+## Ý tưởng cốt lõi của hệ thống
 
 Hệ thống được thiết kế và phát triển tập trung xoay quanh mô hình: 
 **Personal Memory + Emotional Timeline System**, kết hợp chặt chẽ giữa 3 yếu tố trọng tâm:
@@ -72,16 +72,17 @@ Hệ thống được thiết kế và phát triển tập trung xoay quanh mô 
        │  CẢM XÚC NGƯỜI DÙNG  │   KÝ ỨC TƯƠNG LAI     │
        │   (Mood Tracking)    │   (Time Capsule)      │
        └──────────────────────┴──────────────────────┘
-##  Kiến trúc đề xuất (Tech Stack)
-
-| Thành phần | Công nghệ đề xuất |
-| :--- | :--- |
-| **Frontend** | React / Web App / Mobile App (Android) |
-| **Backend** | RESTful API |
-| **Database** | MySQL / MongoDB |
-| **Storage** | Cloud Storage (Lưu trữ hình ảnh/video) |
 
 ---
+
+##  Kiến trúc đề xuất (Tech Stack)
+
+| Thành phần   | Công nghệ đề xuất                      |
+| :----------- | :------------------------------------- |
+| **Frontend** | React / Web App / Mobile App (Android) |
+| **Backend**  | RESTful API                            |
+| **Database** | MySQL / MongoDB                        |
+| **Storage**  | Cloud Storage (Lưu trữ hình ảnh/video) |
 
 ## Kết luận
 
