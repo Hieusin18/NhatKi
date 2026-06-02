@@ -43,9 +43,9 @@ Dự án được phát triển dựa trên phần mềm Setlog — một ứng 
 ### 2.2 Authenticated User (Người dùng đã đăng nhập)
 **Định nghĩa:** Người dùng đã xác thực thành công và sở hữu phiên làm việc hợp lệ.
 **Phạm vi truy cập:**
-*   **Nhật ký cá nhân & Feed nhóm:** Tạo, xem danh sách, chi tiết, chỉnh sửa và xóa nhật ký cá nhân của mình; Đính kèm và xử lý Media (tải hình ảnh/video lên S3/Cloudinary, nén video trước khi upload); Chọn địa điểm qua Map Picker (Google Maps/Mapbox API) và gắn tag địa điểm vào bài đăng; Xem Feed nhóm (hỗ trợ phân trang/pagination); Thả cảm xúc (Reaction) và Bình luận (Comment) bài viết của thành viên khác trên Feed nhóm.
+*   **Nhật ký cá nhân & Feed nhóm:** Tạo, xem danh sách, chi tiết, chỉnh sửa và xóa nhật ký cá nhân của mình; Đính kèm và xử lý Media (tải hình ảnh/video lên S3/Cloudinary, nén video trước khi upload); Chọn địa điểm qua Map Picker (Google Maps/Mapbox API) và gắn tag địa điểm vào bài đăng; Xem Feed nhóm (hỗ trợ phân trang/pagination); Thả cảm xúc (Reaction) và Bình luận (Comment) bài viết của thành viên khác trên Feed nhóm; Khởi tạo nhóm mới và mời thành viên tham gia thông qua mã mời (Invite Code).
 *   **Time Capsule:** Tạo mới, thiết lập khóa, xem đồng hồ đếm ngược, và đọc nội dung sau khi capsule được mở khóa; gửi capsule cho người nhận khác; nhận thông báo khi capsule mở khóa; gửi báo cáo vi phạm đối với capsule nhận được.
-*   **Mood Log:** Tạo và cập nhật tâm trạng hàng ngày, xem biểu đồ xu hướng cá nhân, nhận gợi ý và xem lại kỷ niệm "Ngày này năm xưa".
+*   **Mood Tracking:** Tạo và cập nhật tâm trạng hàng ngày, xem biểu đồ xu hướng cá nhân, nhận gợi ý và xem lại kỷ niệm "Ngày này năm xưa" tại Mood Tracking.
 *   **Group Check-in:** Khởi tạo phiên check-in nhóm; Thiết lập khung thời gian giới hạn; Nhận thông báo check-in đồng thời; Xem và cập nhật trạng thái hoạt động real-time, trạng thái online cùng các thành viên khác trong phiên nhóm; Thực hiện check-in bằng cách chụp ảnh trực tiếp từ Camera native (Front/Back) và chia sẻ tức thời (Broadcast) qua WebSocket.
 *   **Hồ sơ người dùng khác:** Tìm kiếm theo Username để thêm vào danh sách người nhận Time Capsule hoặc danh sách thành viên phiên check-in nhóm.
 
@@ -91,6 +91,7 @@ rectangle "Hệ thống Setlog" {
         usecase "UC27: Tương tác bài viết (Reaction & Comment)" as UC27
         usecase "UC28: Tải lên và xử lý Media" as UC28
         usecase "UC29: Chọn và gắn thẻ địa điểm" as UC29
+        usecase "UC30: Khởi tạo và Quản lý nhóm" as UC30
     }
 
     package "Time Capsule" {
@@ -141,6 +142,7 @@ User --> UC26
 User --> UC27
 User --> UC28
 User --> UC29
+User --> UC30
 
 ' Time Capsule Relationships
 UC08 ..> UC09 : <<include>>
@@ -188,7 +190,7 @@ UC10 ..> UC08 : <<extend>>
     5.  Hệ thống xác nhận thông tin chính xác, khởi tạo phiên làm việc của người dùng và chuyển hướng về trang Dashboard.
 *   **Luồng ngoại lệ:**
     *   *EX-AUTH-02-01 (Sai thông tin đăng nhập):* Username/Email hoặc Mật khẩu không chính xác. Hệ thống hiển thị lỗi: "Tên đăng nhập hoặc mật khẩu không chính xác" (không chỉ rõ sai trường nào để bảo mật).
-    *   *EX-AUTH-02-02 (Tài khoản bị khóa):* Tài khoản đã bị khóa bởi Admin (trạng thái Deactivated). Hệ thống hiển thị thông báo lỗi: "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ Admin để được hỗ trợ".
+    *   *EX-AUTH-02-02 (Tài khoản bị khóa):* Tài khoản đã bị đình chỉ hoạt động do vi phạm điều khoản hệ thống. Hệ thống hiển thị thông báo lỗi: "Tài khoản của bạn đã bị đình chỉ do vi phạm điều khoản hệ thống. Vui lòng gửi yêu cầu hỗ trợ tới hệ thống để được giải quyết."
 
 #### UC03: Đăng xuất
 *   **Mô tả:** Người dùng đang đăng nhập thực hiện kết thúc phiên làm việc hiện tại để bảo mật tài khoản.
@@ -238,7 +240,7 @@ UC10 ..> UC08 : <<extend>>
         - b2. Người dùng nhấn chọn "Xác nhận xóa".
         - b3. Hệ thống chuyển trạng thái bài viết thành đã xóa (soft-delete) và ẩn khỏi giao diện hiển thị của người dùng.
 *   **Luồng ngoại lệ:**
-    *   *EX-JO-02-01 (Truy cập trái phép):* Người dùng cố tinh sửa/xóa bài viết của người khác bằng cách thay đổi ID bài viết trên đường dẫn URL. Hệ thống phát hiện ID người tạo bài viết không trùng khớp với ID người dùng hiện tại, từ chối thực hiện và chuyển hướng tới trang lỗi 403 (Forbidden).
+    *   *EX-JO-02-01 (Truy cập trái phép):* Người dùng cố tình sửa/xóa bài viết của người khác bằng cách thay đổi ID bài viết trên đường dẫn URL. Hệ thống phát hiện ID người tạo bài viết không trùng khớp với ID người dùng hiện tại, từ chối thực hiện và chuyển hướng tới trang lỗi 403 (Forbidden).
 
 #### UC06: Xem danh sách bài viết
 *   **Mô tả:** Người dùng xem danh sách các bài nhật ký của mình, hỗ trợ tìm kiếm và lọc nội dung.
@@ -254,18 +256,18 @@ UC10 ..> UC08 : <<extend>>
     *   *ALT-JO-03-02 (Tìm kiếm bài viết):* Người dùng nhập từ khóa vào thanh tìm kiếm. Hệ thống tiến hành lọc các bài viết có tiêu đề hoặc nội dung chứa từ khóa và hiển thị kết quả.
 
 #### UC07: Báo cáo bài viết vi phạm
-*   **Mô tả:** Người nhận của một Time Capsule phát hiện nội dung độc hại hoặc vi phạm điều khoản và tiến hành báo cáo lên quản trị viên.
-*   **Tác nhân:** Authenticated User (Vai trò người nhận).
-*   **Điều kiện tiên quyết:** Đã đăng nhập. Time Capsule được báo cáo phải gửi đến người dùng này và đã được mở khóa.
-*   **Điều kiện sau khi hoàn thành:** Yêu cầu báo cáo được hệ thống ghi nhận và gửi vào hàng đợi xử lý của hệ thống.
+*   **Mô tả:** Người dùng phát hiện một bài viết hoặc chia sẻ có nội dung độc hại trên Group Feed và tiến hành gửi báo cáo vi phạm lên hệ thống.
+*   **Tác nhân:** Authenticated User.
+*   **Điều kiện tiên quyết:** Đã đăng nhập vào hệ thống.
+*   **Điều kiện sau khi hoàn thành:** Yêu cầu báo cáo được hệ thống ghi nhận và chuyển vào hàng đợi xử lý tự động của hệ thống.
 *   **Luồng sự kiện chính:**
-    1.  Người dùng mở đọc chi tiết một Time Capsule nhận được từ người khác (UC12).
+    1.  Người dùng xem bài viết hoặc chia sẻ trên Group Feed (UC26).
     2.  Người dùng phát hiện nội dung vi phạm và nhấn nút "Báo cáo vi phạm".
     3.  Hệ thống hiển thị Form báo cáo gồm: Lý do báo cáo (chọn từ danh sách: Quấy rối, Ngôn từ kích động, Nội dung nhạy cảm, Khác) và trường nhập ý kiến chi tiết (bắt buộc).
     4.  Người dùng hoàn thành Form và nhấn nút "Gửi báo cáo".
-    5.  Hệ thống kiểm tra thông tin, ghi nhận báo cáo vào cơ sở dữ liệu (lưu thông tin ID Capsule, ID người báo cáo, lý do, chi tiết và mốc thời gian), đồng thời gửi thông báo thành công cho người dùng.
+    5.  Hệ thống kiểm tra thông tin, ghi nhận báo cáo vào cơ sở dữ liệu (lưu thông tin ID bài viết, ID người báo cáo, lý do, chi tiết và mốc thời gian), đồng thời gửi thông báo thành công cho người dùng.
 *   **Luồng ngoại lệ:**
-    *   *EX-JO-04-01 (Báo cáo không hợp lệ):* Người dùng cố tình báo cáo Time Capsule do chính mình tạo ra. Hệ thống phát hiện người tạo và người báo cáo trùng nhau, hiển thị thông báo từ chối: "Bạn không thể tự báo cáo Time Capsule của chính mình".
+    *   *EX-JO-04-01 (Báo cáo không hợp lệ):* Người dùng cố tình báo cáo bài viết do chính mình tạo ra. Hệ thống phát hiện người tạo và người báo cáo trùng nhau, hiển thị thông báo từ chối: "Bạn không thể tự báo cáo bài viết của chính mình".
 
 #### UC26: Xem Feed nhóm
 *   **Mô tả:** Người dùng xem danh sách các bài viết nhật ký/chia sẻ từ các thành viên trong nhóm của mình dưới dạng Feed (dòng trạng thái), hỗ trợ tải dữ liệu theo trang để tối ưu hiệu năng.
@@ -314,10 +316,13 @@ UC10 ..> UC08 : <<extend>>
     1.  Người dùng nhấn biểu tượng "Đính kèm Media" trên Form tạo/chỉnh sửa bài viết.
     2.  Hệ thống mở trình chọn tệp tin trên thiết bị. Người dùng chọn tệp hình ảnh hoặc video mong muốn.
     3.  Hệ thống kiểm tra định dạng tệp (hỗ trợ JPG, PNG, GIF, MP4, MOV) và dung lượng tệp.
-    4.  *Nếu là tệp Video (Nhánh A):*
-        - a1. Hệ thống tự động kích hoạt bộ nén video (video compressor) tích hợp phía Client (ví dụ: dùng thư viện WebAssembly FFmpeg hoặc API nén tích hợp của ứng dụng).
-        - a2. Tiến trình nén chạy ngầm để giảm độ phân giải (tối đa 1080p) và bitrate của video xuống mức tối ưu mà không làm mất quá nhiều chi tiết hiển thị, giảm đáng kể dung lượng tệp tin.
-        - a3. Hệ thống hiển thị tiến trình nén cho người dùng (ví dụ: "Đang tối ưu hóa video...").
+    4.  Hệ thống kiểm tra loại tệp tin:
+        - *Nếu là tệp Hình ảnh (Nhánh A):* Hệ thống chuyển tiếp thẳng đến Bước 5.
+        - *Nếu là tệp Video (Nhánh B):*
+            - b1. Hệ thống tự động kích hoạt bộ nén video (video compressor) tích hợp phía Client (ví dụ: dùng thư viện WebAssembly FFmpeg hoặc API nén tích hợp của ứng dụng) để tối ưu hóa dung lượng.
+            - b2. Tiến trình nén chạy ngầm để giảm độ phân giải (tối đa 1080p) và bitrate của video xuống mức tối ưu mà không làm mất quá nhiều chi tiết hiển thị, giảm đáng kể dung lượng tệp tin.
+            - b3. Hệ thống hiển thị tiến trình nén cho người dùng (ví dụ: "Đang tối ưu hóa video...").
+            - b4. Sau khi nén xong, hệ thống chuyển tiếp đến Bước 5.
     5.  Hệ thống tạo yêu cầu tải lên có chữ ký (presigned URL) từ server và tải trực tiếp tệp (đã được nén nếu là video) lên AWS S3 hoặc Cloudinary.
     6.  Quá trình tải lên hoàn tất, S3/Cloudinary trả về URL của tệp tin.
     7.  Hệ thống lưu URL này vào bộ nhớ tạm thời của bài viết để sẵn sàng lưu chính thức khi người dùng nhấn "Lưu bài viết" (UC04).
@@ -340,6 +345,18 @@ UC10 ..> UC08 : <<extend>>
 *   **Luồng ngoại lệ:**
     *   *EX-JO-12-01 (Thiếu quyền truy cập GPS):* Người dùng từ chối cấp quyền định vị cho ứng dụng. Hệ thống hiển thị bản đồ mặc định tại trung tâm thành phố và yêu cầu người dùng tìm kiếm địa điểm thủ công qua thanh tìm kiếm.
     *   *EX-JO-12-02 (Lỗi API Bản đồ):* Không kết nối được tới máy chủ của Google Maps/Mapbox API. Hệ thống ẩn tính năng bản đồ trực quan và cho phép người dùng tự nhập tên địa điểm bằng tay vào một trường văn bản thuần túy.
+
+#### UC30: Khởi tạo và Quản lý nhóm
+*   **Mô tả:** Người dùng thực hiện tạo một nhóm chia sẻ mới và lấy mã mời (Invite Code) để kết nối với các thành viên khác.
+*   **Tác nhân:** Authenticated User.
+*   **Điều kiện tiên quyết:** Đã đăng nhập vào hệ thống.
+*   **Điều kiện sau khi hoàn thành:** Nhóm mới được khởi tạo thành công, hệ thống cấp một mã mời duy nhất (Invite Code) có hiệu lực để người dùng gửi cho bạn bè.
+*   **Luồng sự kiện chính:**
+    1.  Người dùng chọn chức năng "Tạo nhóm mới" trên giao diện.
+    2.  Hệ thống hiển thị Form gồm các trường: Tên nhóm (bắt buộc), Mô tả nhóm (tùy chọn).
+    3.  Người dùng nhập thông tin và nhấn "Khởi tạo".
+    4.  Hệ thống kiểm tra dữ liệu hợp lệ, lưu thông tin nhóm vào cơ sở dữ liệu, đặt người tạo làm Trưởng nhóm (Owner).
+    5.  Hệ thống tự động thuật toán tạo ra một mã mời (Invite Code) gồm 6 ký tự duy nhất gắn liền với nhóm đó và hiển thị lên màn hình kèm nút "Sao chép".
 
 ---
 
@@ -377,7 +394,7 @@ UC10 ..> UC08 : <<extend>>
     *   *EX-TC-02-01 (Thời gian mở khóa không hợp lệ):* Ngày giờ được chọn nằm ở quá khứ hoặc khoảng cách thời gian nhỏ hơn quy định tối thiểu. Hệ thống báo lỗi: "Thời gian mở khóa không hợp lệ. Vui lòng chọn thời điểm tối thiểu cách hiện tại 1 giờ (hoặc 1 phút đối với Demo Mode)".
 
 #### UC10: Gửi Capsule cho người nhận
-*   **Mô tả:** Người tạo bổ dung danh sách những người nhận sẽ được quyền đọc Time Capsule khi nó được mở khóa.
+*   **Mô tả:** Người tạo bổ sung danh sách những người nhận sẽ được quyền đọc Time Capsule khi nó được mở khóa.
 *   **Tác nhân:** Authenticated User (đóng vai trò người tạo, mở rộng từ UC08).
 *   **Điều kiện tiên quyết:** Đang thực hiện tạo Time Capsule (UC08) và trước khi bấm "Lưu & Khóa".
 *   **Điểm mở rộng:** Trước khi nhấn nút "Lưu & Khóa" của UC08.
@@ -471,7 +488,7 @@ UC10 ..> UC08 : <<extend>>
 *   **Điều kiện sau khi hoàn thành:** Danh sách bài viết gợi ý được hiển thị ở góc màn hình.
 *   **Luồng sự kiện chính:**
     1.  Hệ thống đọc mức độ cảm xúc hiện tại của người dùng (từ 1 đến 5).
-    2.  Hệ thống áp dụng Quy tắc nghiệp vụ gợi ý để lọc ra tối gia 5 bài viết nhật ký cũ của chính người dùng này.
+    2.  Hệ thống áp dụng Quy tắc nghiệp vụ gợi ý để lọc ra tối đa 5 bài viết nhật ký cũ của chính người dùng này.
     3.  Hệ thống hiển thị danh sách các bài viết gợi ý (bao gồm Tiêu đề, Ngày viết, Trích dẫn ngắn).
     4.  Người dùng click vào tiêu đề để mở xem lại bài viết đó.
 *   **Quy tắc nghiệp vụ gợi ý:**
@@ -559,7 +576,7 @@ Dưới đây là danh sách các yêu cầu chức năng (FR) được chuẩn 
 | **FR-AUTH-02** | Kiểm tra định dạng dữ liệu đầu vào và tính duy nhất của Username/Email khi đăng ký tài khoản. | UC01 |
 | **FR-AUTH-03** | Cho phép người dùng đăng nhập hệ thống bằng cách nhập Username/Email và Mật khẩu. | UC02 |
 | **FR-AUTH-04** | Khởi tạo phiên làm việc (Session/Token) bảo mật và chuyển hướng người dùng khi đăng nhập thành công. | UC02 |
-| **FR-AUTH-05** | Ngăn chặn đăng nhập đối với tài khoản đã bị khóa (Deactivated) và hiển thị thông báo liên hệ Admin. | UC02 |
+| **FR-AUTH-05** | Ngăn chặn đăng nhập đối với tài khoản đã bị khóa (Deactivated) và hiển thị thông báo gửi yêu cầu hỗ trợ tới hệ thống. | UC02 |
 | **FR-AUTH-06** | Hủy bỏ hoàn toàn phiên làm việc của người dùng hiện tại ở cả client và server khi đăng xuất. | UC03 |
 | **FR-JO-01** | Cho phép người dùng tạo bài viết nhật ký mới với các trường: Tiêu đề, Nội dung, Cảm xúc (1-5), Nhãn chủ đề, ảnh/video đính kèm và thẻ địa điểm. | UC04 |
 | **FR-JO-02** | Giới hạn kích thước file hình ảnh đính kèm ban đầu trước khi tải lên tối đa là 5MB. | UC04 |
@@ -574,6 +591,7 @@ Dưới đây là danh sách các yêu cầu chức năng (FR) được chuẩn 
 | **FR-JO-11** | Hỗ trợ đính kèm hình ảnh và video vào bài viết nhật ký/feed, tải lên lưu trữ đám mây qua S3 hoặc Cloudinary. | UC28 |
 | **FR-JO-12** | Tự động tối ưu hóa và nén video (video compression) phía client trước khi upload lên Cloud Storage để tối ưu băng thông. | UC28 |
 | **FR-JO-13** | Tích hợp Map Picker (Google Maps hoặc Mapbox API) để chọn, định vị và gắn tag địa điểm vào bài viết nhật ký/feed. | UC29 |
+| **FR-JO-14** | Cho phép người dùng khởi tạo nhóm mới, hệ thống tự động cấp mã mời (Invite Code) duy nhất gồm 6 ký tự để kết nối thành viên. | UC30 |
 | **FR-TC-01** | Cho phép người dùng soạn thảo Time Capsule mới gồm Tiêu đề và Nội dung. | UC08 |
 | **FR-TC-02** | Cho phép người dùng thiết lập thời gian mở khóa trong tương lai cho Time Capsule. | UC09 |
 | **FR-TC-03** | Mã hóa nội dung thô và chặn mọi quyền đọc/truy cập đối với các Time Capsule đang ở trạng thái khóa. | UC09 |
@@ -611,5 +629,5 @@ Dưới đây là danh sách các yêu cầu chức năng (FR) được chuẩn 
 *   **Trễ truyền dữ liệu WebSocket:** Thời gian truyền trạng thái check-in và hình ảnh từ một client đến tất cả các client khác trong nhóm thông qua WebSocket server phải dưới 500ms trong điều kiện kết nối mạng ổn định.
 
 ### 6.3 Tính khả dụng (Usability)
-*   **Giao diện đáp ứng (Responsive Layout):** Hệ thống giao diện phải được tối ưu hóa hiển thị tốt trên cả hai môi trường: Desktop (màn hình rộng) và Mobile (các dòng điện thoại thông minh tiêu chuẩn).
+*   **Giao diện đáp ứng (Responsive Layout):** Hệ thống giao diện được tối ưu hóa hiển thị tốt nhất trên môi trường ứng dụng di động (Mobile App) dành cho các dòng điện thoại thông minh tiêu chuẩn.
 *   **Thiết kế thẩm mỹ:** Áp dụng phong cách tối giản, hiện đại, hỗ trợ chế độ tối (Dark Mode) để bảo vệ mắt người dùng khi viết nhật ký vào ban đêm.
