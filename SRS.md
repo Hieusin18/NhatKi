@@ -12,11 +12,10 @@
 3. [Sơ đồ Use Case tổng thể](#3-sơ-đồ-use-case-tổng-thể)
 4. [Đặc tả chi tiết Use Case](#4-đặc-tả-chi-tiết-use-case)
    - [4.1 Cụm Xác thực (Auth)](#41-cụm-xác-thực-auth)
-   - [4.2 Cụm Nhật ký cá nhân (Core Journal)](#42-cụm-nhật-ký-cá-nhân-core-journal)
+   - [4.2 Cụm Nhật ký cá nhân & Feed nhóm (Core Journal & Group Feed)](#42-cụm-nhật-ký-cá-nhân--feed-nhóm-core-journal--group-feed)
    - [4.3 Cụm Time Capsule](#43-cụm-time-capsule)
    - [4.4 Cụm Mood Tracking](#44-cụm-mood-tracking)
    - [4.5 Cụm Group Check-in (MVP)](#45-cụm-group-check-in-mvp)
-   - [4.6 Cụm Admin Panel (Phạm vi mở rộng - Future Scope)](#46-cụm-admin-panel-phạm-vi-mở-rộng---future-scope)
 5. [Yêu cầu chức năng (Functional Requirements - FRs)](#5-yêu-cầu-chức-năng-functional-requirements---frs)
 6. [Yêu cầu phi chức năng (NFRs)](#6-yêu-cầu-phi-chức-năng-nfrs)
 
@@ -24,13 +23,12 @@
 
 ## 1. Giới thiệu dự án
 
-Dự án được phát triển dựa trên phần mềm Setlog — một ứng dụng nhật ký cá nhân cho phép người dùng ghi lại khoảnh khắc và suy nghĩ hằng ngày. Trên nền tảng đó, hệ thống tập trung xây dựng ba cụm chức năng chính:
+Dự án được phát triển dựa trên phần mềm Setlog — một ứng dụng nhật ký cá nhân cho phép người dùng ghi lại khoảnh khắc và suy nghĩ hằng ngày. Trên nền tảng đó, hệ thống tập trung xây dựng các cụm chức năng chính:
 
-*   **Core Journal (MVP):** Nơi người dùng lưu trữ ký ức hàng ngày kèm theo nhãn chủ đề và cảm xúc tương ứng.
+*   **Core Journal & Group Feed (MVP):** Nơi người dùng lưu trữ ký ức hàng ngày kèm theo nhãn chủ đề và cảm xúc tương ứng, gắn thẻ địa điểm (Map API), đính kèm media đã nén tối ưu (S3/Cloudinary); đồng thời hỗ trợ xem Feed nhóm (phân trang), thả cảm xúc (Reaction) và bình luận (Comment) để nâng cao tính tương tác.
 *   **Time Capsule (MVP):** Soạn thảo thư tương lai, thiết lập thời gian mở khóa. Thư có thể được gửi đến một hoặc nhiều người nhận trong hệ thống và bị khóa hoàn toàn cho tới khi đến hạn.
 *   **Mood Tracking (MVP):** Theo dõi chỉ số cảm xúc hằng ngày, xem biểu đồ xu hướng 30 ngày, nhận gợi ý bài viết cũ dựa trên tâm trạng hiện tại và xem lại kỷ niệm "Ngày này năm xưa".
-*   **Group Check-in (MVP):** Tính năng hỗ trợ thông báo đồng thời cho nhóm, thiết lập khung thời gian check-in giới hạn nhằm tạo cảm giác tương tác thời gian thực (real-time) và thúc đẩy tính kết nối giữa các thành viên.
-*   **Admin Panel (Mở rộng):** Công cụ quản trị để quản lý tài khoản, kiểm duyệt báo cáo vi phạm và thực hiện sao lưu/phục hồi dữ liệu hệ thống (Không bắt buộc trong Sprint 1).
+*   **Group Check-in (MVP):** Tính năng hỗ trợ thông báo đồng thời cho nhóm, thiết lập khung thời gian check-in giới hạn nhằm tạo cảm giác tương tác thời gian thực (real-time) và thúc đẩy tính kết nối giữa các thành viên thông qua kết nối WebSocket, hiển thị trạng thái online của thành viên và yêu cầu chụp ảnh từ Camera native để check-in tức thời.
 
 ---
 
@@ -45,15 +43,11 @@ Dự án được phát triển dựa trên phần mềm Setlog — một ứng 
 ### 2.2 Authenticated User (Người dùng đã đăng nhập)
 **Định nghĩa:** Người dùng đã xác thực thành công và sở hữu phiên làm việc hợp lệ.
 **Phạm vi truy cập:**
-*   **Bài viết nhật ký:** Tạo, xem danh sách, chi tiết, chỉnh sửa và xóa nhật ký cá nhân của mình.
+*   **Nhật ký cá nhân & Feed nhóm:** Tạo, xem danh sách, chi tiết, chỉnh sửa và xóa nhật ký cá nhân của mình; Đính kèm và xử lý Media (tải hình ảnh/video lên S3/Cloudinary, nén video trước khi upload); Chọn địa điểm qua Map Picker (Google Maps/Mapbox API) và gắn tag địa điểm vào bài đăng; Xem Feed nhóm (hỗ trợ phân trang/pagination); Thả cảm xúc (Reaction) và Bình luận (Comment) bài viết của thành viên khác trên Feed nhóm.
 *   **Time Capsule:** Tạo mới, thiết lập khóa, xem đồng hồ đếm ngược, và đọc nội dung sau khi capsule được mở khóa; gửi capsule cho người nhận khác; nhận thông báo khi capsule mở khóa; gửi báo cáo vi phạm đối với capsule nhận được.
 *   **Mood Log:** Tạo và cập nhật tâm trạng hàng ngày, xem biểu đồ xu hướng cá nhân, nhận gợi ý và xem lại kỷ niệm "Ngày này năm xưa".
-*   **Group Check-in:** Khởi tạo phiên check-in nhóm; Thiết lập khung thời gian giới hạn; Nhận thông báo check-in đồng thời; Xem và cập nhật trạng thái hoạt động real-time cùng các thành viên khác trong phiên nhóm.
+*   **Group Check-in:** Khởi tạo phiên check-in nhóm; Thiết lập khung thời gian giới hạn; Nhận thông báo check-in đồng thời; Xem và cập nhật trạng thái hoạt động real-time, trạng thái online cùng các thành viên khác trong phiên nhóm; Thực hiện check-in bằng cách chụp ảnh trực tiếp từ Camera native (Front/Back) và chia sẻ tức thời (Broadcast) qua WebSocket.
 *   **Hồ sơ người dùng khác:** Tìm kiếm theo Username để thêm vào danh sách người nhận Time Capsule hoặc danh sách thành viên phiên check-in nhóm.
-
-### 2.3 Admin (Quản trị viên - Phạm vi mở rộng)
-**Định nghĩa:** Tài khoản quản trị, có quyền quản lý hệ thống và xử lý nội dung báo cáo vi phạm.
-**Phạm vi truy cập:** Xem dashboard thống kê hệ thống, quản lý tài khoản người dùng (khóa/mở khóa), kiểm duyệt Time Capsule bị báo cáo vi phạm (bác bỏ hoặc gỡ bỏ), thực hiện sao lưu và phục hồi dữ liệu hệ thống.
 
 ---
 
@@ -79,7 +73,6 @@ skinparam usecase {
 
 actor "Guest\n(Người dùng chưa đăng nhập)" as Guest
 actor "Authenticated User\n(Người dùng đã đăng nhập)" as User
-actor "Admin\n(Quản trị viên)" as Admin
 
 rectangle "Hệ thống Setlog" {
 
@@ -89,11 +82,15 @@ rectangle "Hệ thống Setlog" {
         usecase "UC03: Đăng xuất" as UC03
     }
 
-    package "Core Journal" {
+    package "Core Journal & Group Feed" {
         usecase "UC04: Tạo bài viết nhật ký" as UC04
         usecase "UC05: Chỉnh sửa / Xóa bài viết" as UC05
         usecase "UC06: Xem danh sách bài viết" as UC06
         usecase "UC07: Báo cáo bài viết vi phạm" as UC07
+        usecase "UC26: Xem Feed nhóm" as UC26
+        usecase "UC27: Tương tác bài viết (Reaction & Comment)" as UC27
+        usecase "UC28: Tải lên và xử lý Media" as UC28
+        usecase "UC29: Chọn và gắn thẻ địa điểm" as UC29
     }
 
     package "Time Capsule" {
@@ -116,14 +113,6 @@ rectangle "Hệ thống Setlog" {
         usecase "UC23: Khởi tạo phiên Group Check-in" as UC23
         usecase "UC24: Tham gia Check-in đồng thời" as UC24
         usecase "UC25: Nhận thông báo phiên Check-in" as UC25
-    }
-
-    package "Admin Panel" {
-        usecase "UC18: Xem Dashboard thống kê" as UC18
-        usecase "UC19: Quản lý tài khoản người dùng" as UC19
-        usecase "UC20: Kiểm duyệt nội dung bị báo cáo" as UC20
-        usecase "UC21: Sao lưu dữ liệu" as UC21
-        usecase "UC22: Phục hồi dữ liệu" as UC22
     }
 }
 
@@ -148,17 +137,14 @@ User --> UC17
 User --> UC23
 User --> UC24
 User --> UC25
+User --> UC26
+User --> UC27
+User --> UC28
+User --> UC29
 
 ' Time Capsule Relationships
 UC08 ..> UC09 : <<include>>
 UC10 ..> UC08 : <<extend>>
-
-' Admin Associations
-Admin --> UC18
-Admin --> UC19
-Admin --> UC20
-Admin --> UC21
-Admin --> UC22
 
 @endum
 ```
@@ -217,42 +203,42 @@ Admin --> UC22
 
 ---
 
-### 4.2 Cụm Nhật ký cá nhân (Core Journal)
+### 4.2 Cụm Nhật ký cá nhân & Feed nhóm (Core Journal & Group Feed)
 
 #### UC04: Tạo bài viết nhật ký
-*   **Mô tả:** Người dùng viết và lưu lại bài nhật ký cá nhân hàng ngày kèm nhãn chủ đề và trạng thái cảm xúc tương ứng.
+*   **Mô tả:** Người dùng viết và lưu lại bài nhật ký cá nhân hàng ngày kèm nhãn chủ đề, trạng thái cảm xúc tương ứng, hình ảnh/video đính kèm và thẻ địa điểm.
 *   **Tác nhân:** Authenticated User.
 *   **Điều kiện tiên quyết:** Đã đăng nhập vào hệ thống.
-*   **Điều kiện sau khi hoàn thành:** Bài viết nhật ký được lưu trữ thành công trong cơ sở dữ liệu của người dùng.
+*   **Điều kiện sau khi hoàn thành:** Bài viết nhật ký kèm vị trí và liên kết media được lưu trữ thành công trong cơ sở dữ liệu của người dùng.
 *   **Luồng sự kiện chính:**
     1.  Người dùng nhấn chọn nút "Viết nhật ký" trên giao diện chính.
-    2.  Hệ thống hiển thị Form soạn thảo nhật ký gồm các trường thông tin: Tiêu đề (bắt buộc), Nội dung nhật ký (bắt buộc), Mức độ cảm xúc (1-5, tùy chọn), Nhãn chủ đề (tùy chọn), Hình ảnh đính kèm (tùy chọn).
-    3.  Người dùng hoàn thiện nội dung và nhấn nút "Lưu bài viết".
+    2.  Hệ thống hiển thị Form soạn thảo nhật ký gồm các trường thông tin: Tiêu đề (bắt buộc), Nội dung nhật ký (bắt buộc), Mức độ cảm xúc (1-5, tùy chọn), Nhãn chủ đề (tùy chọn), Hình ảnh/Video đính kèm (tùy chọn, gọi UC28 để tải lên và nén video nếu có), Gắn thẻ địa điểm (tùy chọn, gọi UC29 để chọn địa điểm qua Map Picker).
+    3.  Người dùng hoàn thiện nội dung, đính kèm media và gắn địa điểm, sau đó nhấn nút "Lưu bài viết".
     4.  Hệ thống kiểm tra tính hợp lệ của dữ liệu đầu vào.
-    5.  Hệ thống lưu bài viết kèm theo ID người dùng và mốc thời gian tạo hiện tại.
+    5.  Hệ thống lưu bài viết kèm theo ID người dùng, mốc thời gian tạo hiện tại, thông tin địa lý và danh sách liên kết media.
     6.  Hệ thống hiển thị thông báo thành công và tự động chuyển hướng người dùng về giao diện danh sách nhật ký.
 *   **Luồng ngoại lệ:**
     *   *EX-JO-01-01 (Thông tin bắt buộc để trống):* Người dùng để trống trường Tiêu đề hoặc Nội dung. Hệ thống hiển thị thông báo lỗi "Vui lòng điền thông tin bắt buộc" dưới các trường tương ứng.
     *   *EX-JO-01-02 (Ảnh vượt quá dung lượng):* Hình ảnh tải lên có kích thước lớn hơn 5MB. Hệ thống từ chối tải ảnh và hiển thị thông báo lỗi: "Kích thước ảnh tối đa cho phép là 5MB".
 
 #### UC05: Chỉnh sửa / Xóa bài viết
-*   **Mô tả:** Người dùng thực hiện cập nhật nội dung hoặc xóa bài nhật ký đã viết trước đó.
+*   **Mô tả:** Người dùng thực hiện cập nhật nội dung, địa điểm, hình ảnh/video hoặc xóa bài nhật ký đã viết trước đó.
 *   **Tác nhân:** Authenticated User.
 *   **Điều kiện tiên quyết:** Đã đăng nhập. Bài viết cần sửa/xóa phải thuộc quyền sở hữu của chính người dùng này.
-*   **Điều kiện sau khi hoàn thành:** Bài viết được cập nhật nội dung mới hoặc được đánh dấu đã xóa (soft-delete)/xóa hoàn toàn khỏi cơ sở dữ liệu.
+*   **Điều kiện sau khi hoàn thành:** Bài viết được cập nhật nội dung mới (gồm cả media và địa điểm) hoặc được đánh dấu đã xóa (soft-delete)/xóa hoàn toàn khỏi cơ sở dữ liệu.
 *   **Luồng sự kiện chính:**
     1.  Người dùng xem chi tiết bài nhật ký của mình.
     2.  Hệ thống hiển thị nội dung chi tiết bài viết kèm các nút chức năng "Chỉnh sửa" và "Xóa".
     3.  *If người dùng chọn "Chỉnh sửa" (Nhánh A):*
-        - a1. Hệ thống hiển thị Form soạn thảo với dữ liệu cũ của bài viết.
-        - a2. Người dùng sửa đổi thông tin và nhấn "Cập nhật".
+        - a1. Hệ thống hiển thị Form soạn thảo với dữ liệu cũ của bài viết (bao gồm cả ảnh/video cũ và thẻ địa điểm cũ).
+        - a2. Người dùng sửa đổi thông tin, có thể chọn lại vị trí qua Map Picker (UC29) hoặc tải thêm/thay đổi media (UC28) và nhấn "Cập nhật".
         - a3. Hệ thống kiểm tra dữ liệu và lưu cập nhật, thông báo thành công.
     4.  *If người dùng chọn "Xóa" (Nhánh B):*
         - b1. Hệ thống hiển thị hộp thoại xác nhận: "Bạn có chắc chắn muốn xóa bài viết này không?".
         - b2. Người dùng nhấn chọn "Xác nhận xóa".
         - b3. Hệ thống chuyển trạng thái bài viết thành đã xóa (soft-delete) và ẩn khỏi giao diện hiển thị của người dùng.
 *   **Luồng ngoại lệ:**
-    *   *EX-JO-02-01 (Truy cập trái phép):* Người dùng cố tình sửa/xóa bài viết của người khác bằng cách thay đổi ID bài viết trên đường dẫn URL. Hệ thống phát hiện ID người tạo bài viết không trùng khớp với ID người dùng hiện tại, từ chối thực hiện và chuyển hướng tới trang lỗi 403 (Forbidden).
+    *   *EX-JO-02-01 (Truy cập trái phép):* Người dùng cố tinh sửa/xóa bài viết của người khác bằng cách thay đổi ID bài viết trên đường dẫn URL. Hệ thống phát hiện ID người tạo bài viết không trùng khớp với ID người dùng hiện tại, từ chối thực hiện và chuyển hướng tới trang lỗi 403 (Forbidden).
 
 #### UC06: Xem danh sách bài viết
 *   **Mô tả:** Người dùng xem danh sách các bài nhật ký của mình, hỗ trợ tìm kiếm và lọc nội dung.
@@ -271,7 +257,7 @@ Admin --> UC22
 *   **Mô tả:** Người nhận của một Time Capsule phát hiện nội dung độc hại hoặc vi phạm điều khoản và tiến hành báo cáo lên quản trị viên.
 *   **Tác nhân:** Authenticated User (Vai trò người nhận).
 *   **Điều kiện tiên quyết:** Đã đăng nhập. Time Capsule được báo cáo phải gửi đến người dùng này và đã được mở khóa.
-*   **Điều kiện sau khi hoàn thành:** Yêu cầu báo cáo được hệ thống ghi nhận và gửi vào hàng đợi xử lý của Admin.
+*   **Điều kiện sau khi hoàn thành:** Yêu cầu báo cáo được hệ thống ghi nhận và gửi vào hàng đợi xử lý của hệ thống.
 *   **Luồng sự kiện chính:**
     1.  Người dùng mở đọc chi tiết một Time Capsule nhận được từ người khác (UC12).
     2.  Người dùng phát hiện nội dung vi phạm và nhấn nút "Báo cáo vi phạm".
@@ -280,6 +266,80 @@ Admin --> UC22
     5.  Hệ thống kiểm tra thông tin, ghi nhận báo cáo vào cơ sở dữ liệu (lưu thông tin ID Capsule, ID người báo cáo, lý do, chi tiết và mốc thời gian), đồng thời gửi thông báo thành công cho người dùng.
 *   **Luồng ngoại lệ:**
     *   *EX-JO-04-01 (Báo cáo không hợp lệ):* Người dùng cố tình báo cáo Time Capsule do chính mình tạo ra. Hệ thống phát hiện người tạo và người báo cáo trùng nhau, hiển thị thông báo từ chối: "Bạn không thể tự báo cáo Time Capsule của chính mình".
+
+#### UC26: Xem Feed nhóm
+*   **Mô tả:** Người dùng xem danh sách các bài viết nhật ký/chia sẻ từ các thành viên trong nhóm của mình dưới dạng Feed (dòng trạng thái), hỗ trợ tải dữ liệu theo trang để tối ưu hiệu năng.
+*   **Tác nhân:** Authenticated User.
+*   **Điều kiện tiên quyết:** Đã đăng nhập vào hệ thống và thuộc ít nhất một nhóm.
+*   **Điều kiện sau khi hoàn thành:** Dòng trạng thái (Feed) nhóm được hiển thị đầy đủ, cho phép cuộn xem và tải thêm bài viết tiếp theo.
+*   **Luồng sự kiện chính:**
+    1.  Người dùng chọn mục "Feed nhóm" trên thanh điều hướng.
+    2.  Hệ thống xác định danh sách các nhóm mà người dùng đang tham gia.
+    3.  Hệ thống truy vấn cơ sở dữ liệu để lấy danh sách bài viết từ các thành viên trong các nhóm này, sắp xếp theo thời gian tạo mới nhất.
+    4.  Hệ thống áp dụng cơ chế phân trang (Pagination): ban đầu chỉ lấy $N$ bài viết đầu tiên (ví dụ: 10 bài viết).
+    5.  Hệ thống hiển thị danh sách bài viết trên Feed bao gồm: Thông tin tác giả (Avatar, Username), Tiêu đề, Nội dung rút gọn, Media đính kèm (hình ảnh/video), Thẻ địa điểm gắn kèm, số lượng Reaction, số lượng Comment và mốc thời gian đăng.
+    6.  Khi người dùng cuộn trang xuống cuối Feed, hệ thống tự động gửi yêu cầu API lấy $N$ bài viết tiếp theo và hiển thị nối tiếp vào danh sách.
+*   **Luồng thay thế:**
+    *   *ALT-JO-09-01 (Không có bài viết mới):* Khi cuộn xuống hết danh sách, hệ thống hiển thị thông báo "Bạn đã xem hết bài viết".
+*   **Luồng ngoại lệ:**
+    *   *EX-JO-09-01 (Người dùng chưa vào nhóm nào):* Hệ thống hiển thị giao diện trống kèm gợi ý: "Hãy tạo hoặc tham gia nhóm để xem các chia sẻ từ bạn bè!".
+
+#### UC27: Tương tác bài viết (Reaction & Comment)
+*   **Mô tả:** Người dùng thực hiện tương tác với các bài viết trên Feed nhóm bằng cách thả cảm xúc (Reaction) hoặc gửi bình luận (Comment).
+*   **Tác nhân:** Authenticated User.
+*   **Điều kiện tiên quyết:** Đã đăng nhập. Có quyền xem bài viết tương ứng trên Feed nhóm (UC26).
+*   **Điều kiện sau khi hoàn thành:** Trạng thái Reaction hoặc nội dung Comment của người dùng được lưu trữ và cập nhật hiển thị tức thời trên bài đăng.
+*   **Luồng sự kiện chính:**
+    1.  Người dùng xem bài viết trên Feed nhóm.
+    2.  *Nếu người dùng chọn "Thả cảm xúc" (Nhánh A):*
+        - a1. Người dùng nhấn nút "Thả cảm xúc" dưới bài viết hoặc di chuột để chọn một trong các biểu tượng cảm xúc (Thích, Yêu thích, HaHa, Wow, Buồn, Phẫn nộ).
+        - a2. Hệ thống ghi nhận biểu tượng cảm xúc được chọn và lưu vào cơ sở dữ liệu.
+        - a3. Hệ thống cập nhật hiển thị số lượng và danh sách reaction tương ứng của bài viết.
+        - a4. Nếu người dùng nhấn lại vào biểu tượng cảm xúc đã chọn trước đó, hệ thống sẽ hủy bỏ reaction đó và cập nhật lại bộ đếm.
+    3.  *Nếu người dùng chọn "Bình luận" (Nhánh B):*
+        - b1. Người dùng nhập nội dung bình luận vào ô soạn thảo "Bình luận..." dưới bài viết (giới hạn tối đa 1000 ký tự) và nhấn nút "Gửi".
+        - b2. Hệ thống kiểm tra dữ liệu đầu vào (không được rỗng).
+        - b3. Hệ thống lưu bình luận kèm ID người dùng, ID bài viết và thời gian bình luận.
+        - b4. Hệ thống hiển thị ngay bình luận mới ở phần danh sách bình luận của bài viết.
+*   **Luồng ngoại lệ:**
+    *   *EX-JO-10-01 (Bình luận rỗng):* Người dùng bấm gửi bình luận nhưng không có ký tự nào. Hệ thống ngăn chặn gửi và không thực hiện thao tác lưu.
+    *   *EX-JO-10-02 (Bài viết đã bị xóa):* Trong lúc đang thao tác bình luận/reaction thì tác giả đã xóa bài viết đó. Hệ thống báo lỗi: "Bài viết này không còn tồn tại" và tải lại trang Feed.
+
+#### UC28: Tải lên và xử lý Media
+*   **Mô tả:** Hệ thống hỗ trợ người dùng đính kèm hình ảnh hoặc video vào bài đăng nhật ký hoặc feed bằng cách tải lên hạ tầng lưu trữ đám mây (AWS S3 hoặc Cloudinary), kèm theo cơ chế tự động tối ưu hóa và nén video tại client trước khi tải lên.
+*   **Tác nhân:** Authenticated User.
+*   **Điều kiện tiên quyết:** Đang thực hiện tạo bài viết (UC04) hoặc cập nhật bài viết (UC05).
+*   **Điều kiện sau khi hoàn thành:** Tệp hình ảnh hoặc video được tải lên đám mây thành công và trả về URL liên kết an toàn để gắn vào bài viết.
+*   **Luồng sự kiện chính:**
+    1.  Người dùng nhấn biểu tượng "Đính kèm Media" trên Form tạo/chỉnh sửa bài viết.
+    2.  Hệ thống mở trình chọn tệp tin trên thiết bị. Người dùng chọn tệp hình ảnh hoặc video mong muốn.
+    3.  Hệ thống kiểm tra định dạng tệp (hỗ trợ JPG, PNG, GIF, MP4, MOV) và dung lượng tệp.
+    4.  *Nếu là tệp Video (Nhánh A):*
+        - a1. Hệ thống tự động kích hoạt bộ nén video (video compressor) tích hợp phía Client (ví dụ: dùng thư viện WebAssembly FFmpeg hoặc API nén tích hợp của ứng dụng).
+        - a2. Tiến trình nén chạy ngầm để giảm độ phân giải (tối đa 1080p) và bitrate của video xuống mức tối ưu mà không làm mất quá nhiều chi tiết hiển thị, giảm đáng kể dung lượng tệp tin.
+        - a3. Hệ thống hiển thị tiến trình nén cho người dùng (ví dụ: "Đang tối ưu hóa video...").
+    5.  Hệ thống tạo yêu cầu tải lên có chữ ký (presigned URL) từ server và tải trực tiếp tệp (đã được nén nếu là video) lên AWS S3 hoặc Cloudinary.
+    6.  Quá trình tải lên hoàn tất, S3/Cloudinary trả về URL của tệp tin.
+    7.  Hệ thống lưu URL này vào bộ nhớ tạm thời của bài viết để sẵn sàng lưu chính thức khi người dùng nhấn "Lưu bài viết" (UC04).
+*   **Luồng ngoại lệ:**
+    *   *EX-JO-11-01 (Định dạng tệp không hợp lệ):* Tệp chọn không phải là định dạng hình ảnh/video được hỗ trợ. Hệ thống báo lỗi: "Định dạng tệp tin không được hỗ trợ. Vui lòng chọn ảnh (JPG, PNG, GIF) hoặc video (MP4, MOV)".
+    *   *EX-JO-11-02 (Lỗi kết nối tải lên):* Mất kết nối internet trong quá trình tải lên hoặc server lưu trữ lỗi. Hệ thống hiển thị thông báo: "Lỗi tải lên tệp tin. Vui lòng kiểm tra lại kết nối mạng".
+
+#### UC29: Chọn và gắn thẻ địa điểm
+*   **Mô tả:** Người dùng xác định vị trí địa lý của bài viết nhật ký/feed bằng cách tìm kiếm và chọn vị trí trên Bản đồ (tích hợp Map API như Google Maps hoặc Mapbox) thông qua một Map Picker.
+*   **Tác nhân:** Authenticated User.
+*   **Điều kiện tiên quyết:** Đang thực hiện tạo bài viết (UC04) hoặc cập nhật bài viết (UC05). Thiết bị của người dùng được kết nối internet.
+*   **Điều kiện sau khi hoàn thành:** Địa điểm được chọn (bao gồm Tên địa điểm, Kinh độ và Vĩ độ) được liên kết thành công với bài viết.
+*   **Luồng sự kiện chính:**
+    1.  Người dùng nhấn chọn nút "Thêm địa điểm" (hình ghim định vị) trên Form bài viết.
+    2.  Hệ thống hiển thị cửa sổ Map Picker (tích hợp Google Maps hoặc Mapbox API), tự động lấy vị trí hiện tại của người dùng dựa trên GPS thiết bị (nếu được cấp quyền).
+    3.  Người dùng có thể nhập từ khóa tìm kiếm địa điểm trên ô tìm kiếm của bản đồ hoặc di chuyển ghim (pin) trên bản đồ trực quan đến vị trí mong muốn.
+    4.  Hệ thống hiển thị tên địa điểm tương ứng với vị trí được chọn (Reverse Geocoding).
+    5.  Người dùng nhấn nút "Xác nhận địa điểm này".
+    6.  Hệ thống ghi nhận thông tin địa lý (Tên địa điểm, Kinh độ/Vĩ độ) và hiển thị thẻ địa điểm (ví dụ: "📍 Công viên Thống Nhất, Hà Nội") trên giao diện Form soạn thảo.
+*   **Luồng ngoại lệ:**
+    *   *EX-JO-12-01 (Thiếu quyền truy cập GPS):* Người dùng từ chối cấp quyền định vị cho ứng dụng. Hệ thống hiển thị bản đồ mặc định tại trung tâm thành phố và yêu cầu người dùng tìm kiếm địa điểm thủ công qua thanh tìm kiếm.
+    *   *EX-JO-12-02 (Lỗi API Bản đồ):* Không kết nối được tới máy chủ của Google Maps/Mapbox API. Hệ thống ẩn tính năng bản đồ trực quan và cho phép người dùng tự nhập tên địa điểm bằng tay vào một trường văn bản thuần túy.
 
 ---
 
@@ -317,7 +377,7 @@ Admin --> UC22
     *   *EX-TC-02-01 (Thời gian mở khóa không hợp lệ):* Ngày giờ được chọn nằm ở quá khứ hoặc khoảng cách thời gian nhỏ hơn quy định tối thiểu. Hệ thống báo lỗi: "Thời gian mở khóa không hợp lệ. Vui lòng chọn thời điểm tối thiểu cách hiện tại 1 giờ (hoặc 1 phút đối với Demo Mode)".
 
 #### UC10: Gửi Capsule cho người nhận
-*   **Mô tả:** Người tạo bổ sung danh sách những người nhận sẽ được quyền đọc Time Capsule khi nó được mở khóa.
+*   **Mô tả:** Người tạo bổ dung danh sách những người nhận sẽ được quyền đọc Time Capsule khi nó được mở khóa.
 *   **Tác nhân:** Authenticated User (đóng vai trò người tạo, mở rộng từ UC08).
 *   **Điều kiện tiên quyết:** Đang thực hiện tạo Time Capsule (UC08) và trước khi bấm "Lưu & Khóa".
 *   **Điểm mở rộng:** Trước khi nhấn nút "Lưu & Khóa" của UC08.
@@ -411,7 +471,7 @@ Admin --> UC22
 *   **Điều kiện sau khi hoàn thành:** Danh sách bài viết gợi ý được hiển thị ở góc màn hình.
 *   **Luồng sự kiện chính:**
     1.  Hệ thống đọc mức độ cảm xúc hiện tại của người dùng (từ 1 đến 5).
-    2.  Hệ thống áp dụng Quy tắc nghiệp vụ gợi ý để lọc ra tối đa 5 bài viết nhật ký cũ của chính người dùng này.
+    2.  Hệ thống áp dụng Quy tắc nghiệp vụ gợi ý để lọc ra tối gia 5 bài viết nhật ký cũ của chính người dùng này.
     3.  Hệ thống hiển thị danh sách các bài viết gợi ý (bao gồm Tiêu đề, Ngày viết, Trích dẫn ngắn).
     4.  Người dùng click vào tiêu đề để mở xem lại bài viết đó.
 *   **Quy tắc nghiệp vụ gợi ý:**
@@ -457,20 +517,25 @@ Admin --> UC22
     *   *EX-GC-01-02 (Thông tin bắt buộc để trống):* Tiêu đề bị bỏ trống hoặc danh sách thành viên trống. Hệ thống hiển thị thông báo lỗi tại trường tương ứng.
 
 #### UC24: Tham gia Check-in đồng thời
-*   **Mô tả:** Các thành viên trong nhóm tham gia vào phiên check-in, xem đồng hồ đếm ngược và cập nhật nhanh trạng thái hoạt động hiện tại của mình lên bảng theo dõi chung.
+*   **Mô tả:** Các thành viên trong nhóm tham gia vào phiên check-in, xem đồng hồ đếm ngược, hiển thị trạng thái online của mình, thực hiện chụp ảnh trực tiếp từ camera native (trước/sau) và chia sẻ tức thời (Broadcast) trạng thái kèm ảnh chụp lên bảng theo dõi chung của phòng nhóm qua kết nối WebSocket thời gian thực.
 *   **Tác nhân:** Authenticated User (Các thành viên được chọn tham gia).
 *   **Điều kiện tiên quyết:** Đã đăng nhập. Có tên trong danh sách thành viên của phiên Group Check-in đang ở trạng thái "Active".
-*   **Điều kiện sau khi hoàn thành:** Trạng thái check-in của người dùng được cập nhật tức thời lên bảng theo dõi chung của nhóm.
+*   **Điều kiện sau khi hoàn thành:** Trạng thái trực tuyến và thông tin check-in (gồm ảnh chụp trực tiếp từ camera native và trạng thái hoạt động) được cập nhật tức thời (real-time) qua WebSocket tới tất cả thành viên khác trong phòng nhóm.
 *   **Luồng sự kiện chính:**
     1.  Người dùng click vào thông báo nhận được (UC25) hoặc chọn phiên đang hoạt động từ danh sách phiên nhóm.
-    2.  Hệ thống kiểm tra quyền truy cập và hiển thị giao diện chung của phiên check-in nhóm.
-    3.  Giao diện hiển thị: Tiêu đề phiên, Danh sách thành viên và trạng thái check-in của họ, Đồng hồ đếm ngược (countdown) hiển thị số phút/giây còn lại cập nhật theo thời gian thực (real-time).
-    4.  Người dùng chọn nhanh một Trạng thái hoạt động (Đang học, Đang ăn, Đang làm việc...) hoặc nhập trạng thái tùy chỉnh, sau đó nhấn nút "Gửi Check-in".
-    5.  Hệ thống kiểm tra thời gian đếm ngược hiện tại của phiên (phải lớn hơn 0).
-    6.  Hệ thống lưu trữ trạng thái check-in của người dùng kèm mốc thời gian gửi, đồng thời tự động cập nhật tức thời (real-time) lên giao diện theo dõi chung của toàn bộ các thành viên khác đang trực tuyến.
+    2.  Hệ thống kiểm tra quyền truy cập, tự động kết nối thiết bị của người dùng tới WebSocket server của phiên check-in nhóm và đánh dấu trạng thái của thành viên này là "Đang trực tuyến" (Online).
+    3.  Giao diện hiển thị: Tiêu đề phiên, Danh sách thành viên kèm trạng thái trực tuyến (Online/Offline) của họ, các hình ảnh và trạng thái check-in đã gửi, Đồng hồ đếm ngược (countdown) hiển thị số phút/giây còn lại cập nhật theo thời gian thực (real-time) qua WebSocket.
+    4.  Người dùng kích hoạt Camera native trên thiết bị (lựa chọn camera trước hoặc camera sau), thực hiện chụp ảnh thực tế tại thời điểm đó.
+    5.  Người dùng chọn nhanh một Trạng thái hoạt động (Đang học, Đang ăn, Đang làm việc...) hoặc nhập trạng thái tùy chỉnh.
+    6.  Người dùng nhấn nút "Gửi Check-in".
+    7.  Hệ thống kiểm tra thời gian đếm ngược hiện tại của phiên (phải lớn hơn 0).
+    8.  Hệ thống thực hiện:
+        - a. Lưu trữ bản ghi check-in (gồm tệp ảnh chụp trực tiếp, trạng thái hoạt động, mốc thời gian gửi) vào cơ sở dữ liệu.
+        - b. Phát trực tiếp (Broadcast) thông tin check-in này ngay lập tức qua WebSocket server tới tất cả thành viên đang online trong phiên nhóm mà không cần họ tải lại trang.
 *   **Luồng ngoại lệ:**
-    *   *EX-GC-02-01 (Hết thời gian check-in):* Người dùng gửi check-in khi đồng hồ đếm ngược đã về 0 (phiên đã hết hạn). Hệ thống từ chối lưu trạng thái, hiển thị cảnh báo: "Phiên check-in đã kết thúc. Bạn không thể cập nhật trạng thái", đồng thời vô hiệu hóa form nhập liệu.
-    *   *EX-GC-02-02 (Gửi yêu cầu trùng lặp):* Người dùng gửi lại check-in lần thứ hai trong cùng một phiên đang hoạt động. Hệ thống sẽ ghi đè trạng thái và ghi chú mới nhất của người dùng lên bảng theo dõi chung, đồng thời cập nhật lại mốc thời gian check-in mới.
+    *   *EX-GC-02-01 (Hết thời gian check-in):* Người dùng gửi check-in khi đồng hồ đếm ngược đã về 0 (phiên đã hết hạn). Hệ thống từ chối lưu trạng thái, hiển thị cảnh báo: "Phiên check-in đã kết thúc. Bạn không thể cập nhật trạng thái", đồng thời vô hiệu hóa camera và form nhập liệu.
+    *   *EX-GC-02-02 (Lỗi quyền truy cập Camera):* Người dùng từ chối cấp quyền truy cập camera cho ứng dụng. Hệ thống chặn không cho bấm nút "Gửi Check-in" và thông báo lỗi: "Yêu cầu quyền truy cập Camera để thực hiện check-in".
+    *   *EX-GC-02-03 (Mất kết nối WebSocket):* Mất kết nối internet hoặc lỗi máy chủ WebSocket trong lúc đang kết nối. Hệ thống tự động chuyển trạng thái của người dùng sang "Ngoại tuyến" (Offline) trên bảng chung và hiển thị thông báo "Mất kết nối thời gian thực, đang tự động kết nối lại...".
 
 #### UC25: Nhận thông báo phiên Check-in
 *   **Mô tả:** Hệ thống gửi thông báo đồng thời cho các thành viên khi một phiên check-in nhóm được khởi tạo để họ tham gia kịp thời.
@@ -481,88 +546,6 @@ Admin --> UC22
     1.  Ngay khi phiên check-in được khởi tạo thành công (UC23), hệ thống tự động gửi thông báo đẩy (push notification) đồng thời đến các thành viên được chỉ định.
     2.  Người dùng nhận được thông báo đẩy dưới dạng: "Bạn được mời tham gia check-in phiên '[Tiêu đề phiên]' cùng nhóm!".
     3.  Người dùng nhấn chọn thông báo, hệ thống xác thực quyền và tự động chuyển hướng người dùng thẳng đến giao diện tham gia check-in của phiên (UC24).
-
----
-
-### 4.6 Cụm Admin Panel (Phạm vi mở rộng - Future Scope)
-
-#### UC18: Xem Dashboard thống kê
-*   **Mô tả:** Quản trị viên xem các số liệu thống kê tổng quan về tình hình hoạt động của hệ thống.
-*   **Tác nhân:** Admin.
-*   **Điều kiện tiên quyết:** Đã đăng nhập bằng tài khoản Admin.
-*   **Điều kiện sau khi hoàn thành:** Hiển thị các biểu đồ, chỉ số hoạt động hệ thống.
-*   **Luồng sự kiện chính:**
-    1.  Admin nhấn chọn mục "Dashboard thống kê" trên menu quản trị.
-    2.  Hệ thống thực hiện truy vấn cơ sở dữ liệu để tổng hợp: Tổng số người dùng đăng ký, số người dùng hoạt động hàng ngày (DAU), tổng số bài nhật ký được viết, tổng số Time Capsule đang khóa/đã mở và số lượng báo cáo vi phạm đang chờ xử lý.
-    3.  Hệ thống hiển thị các số liệu dạng thẻ chỉ số và biểu đồ thống kê xu hướng tăng trưởng.
-
-#### UC19: Quản lý tài khoản người dùng
-*   **Mô tả:** Admin thực hiện khóa hoặc mở khóa tài khoản của người dùng trong hệ thống dựa trên hành vi sử dụng.
-*   **Tác nhân:** Admin.
-*   **Điều kiện tiên quyết:** Đã đăng nhập bằng tài khoản Admin.
-*   **Điều kiện sau khi hoàn thành:** Trạng thái tài khoản người dùng được cập nhật trong cơ sở dữ liệu.
-*   **Luồng sự kiện chính:**
-    1.  Admin truy cập trang "Quản lý tài khoản người dùng".
-    2.  Hệ thống hiển thị danh sách toàn bộ người dùng gồm: ID, Username, Email, Ngày tạo, Trạng thái (Active/Deactivated).
-    3.  Admin có thể tìm kiếm người dùng theo Username hoặc lọc theo trạng thái.
-    4.  Admin chọn tài khoản cần xử lý và nhấn nút "Khóa tài khoản" hoặc "Mở khóa".
-    5.  Hệ thống hiển thị hộp thoại yêu cầu xác nhận thao tác.
-    6.  Admin bấm chọn "Xác nhận".
-    7.  Hệ thống cập nhật trạng thái mới của người dùng trong cơ sở dữ liệu, ghi nhật ký hoạt động (Audit Log) và hiển thị thông báo thành công.
-*   **Quy tắc nghiệp vụ:**
-    - Tài khoản khi ở trạng thái Deactivated sẽ không thể thực hiện đăng nhập ở UC02. Nếu người dùng đang trực tuyến khi bị khóa tài khoản, hệ thống sẽ tự động hủy phiên đăng nhập (Session) của họ ngay lập tức.
-
-#### UC20: Kiểm duyệt nội dung bị báo cáo
-*   **Mô tả:** Admin kiểm tra các Time Capsule bị báo cáo vi phạm nội dung và đưa ra quyết định xử lý phù hợp.
-*   **Tác nhân:** Admin.
-*   **Điều kiện tiên quyết:** Đã đăng nhập bằng tài khoản Admin.
-*   **Điều kiện sau khi hoàn thành:** Báo cáo được xử lý, trạng thái nội dung bị báo cáo được cập nhật, ghi nhận lịch sử kiểm duyệt.
-*   **Luồng sự kiện chính:**
-    1.  Admin truy cập mục "Kiểm duyệt nội dung bị báo cáo".
-    2.  Hệ thống hiển thị danh sách các Time Capsule đang bị báo cáo (chưa xử lý) kèm lý do và thông tin người báo cáo.
-    3.  Admin nhấn chọn một báo cáo để xem chi tiết nội dung của Time Capsule bị báo cáo đó.
-    4.  *Nếu Admin quyết định giữ nguyên nội dung (Bác bỏ báo cáo):*
-        - a1. Admin chọn "Bác bỏ báo cáo".
-        - a2. Hệ thống cập nhật trạng thái báo cáo thành "Đã bác bỏ", giữ nguyên trạng thái Capsule.
-    5.  *Nếu Admin quyết định gỡ bỏ nội dung (Chấp nhận báo cáo):*
-        - b1. Admin chọn "Gỡ bỏ nội dung".
-        - b2. Hệ thống chuyển trạng thái Capsule thành "Đã ẩn do vi phạm", gửi thông báo cảnh cáo tự động đến tài khoản của người gửi Capsule.
-    6.  Hệ thống ghi nhận chi tiết hành động vào Audit Log hệ thống (gồm tên Admin, ID Capsule, hành động xử lý và thời gian).
-*   **Quy tắc nghiệp vụ:**
-    - Để phục vụ kiểm duyệt, Admin chỉ được quyền xem chi tiết nội dung của những Time Capsule **đã bị báo cáo vi phạm**. Admin tuyệt đối không được truy cập hay đọc các thư Time Capsule đang khóa hoặc không bị báo cáo.
-
-#### UC21: Sao lưu dữ liệu
-*   **Mô tả:** Admin thực hiện tạo bản sao lưu vật lý cho toàn bộ dữ liệu của hệ thống để phòng ngừa sự cố.
-*   **Tác nhân:** Admin.
-*   **Điều kiện tiên quyết:** Đã đăng nhập bằng tài khoản Admin.
-*   **Điều kiện sau khi hoàn thành:** File sao lưu được tạo thành công trên máy chủ và hiển thị trong danh sách lịch sử sao lưu.
-*   **Luồng sự kiện chính:**
-    1.  Admin truy cập mục "Sao lưu & Phục hồi".
-    2.  Admin nhấn chọn nút "Tạo bản sao lưu mới".
-    3.  Hệ thống tiến hành kết xuất (dump) toàn bộ cơ sở dữ liệu của hệ thống.
-    4.  Hệ thống nén tệp tin dưới dạng `.zip`/`.sql`, đặt tên theo mốc thời gian và lưu vào thư mục lưu trữ bảo mật trên máy chủ.
-    5.  Hệ thống cập nhật danh sách lịch sử sao lưu trên giao diện kèm dung lượng file và nút "Tải về".
-    6.  Hệ thống hiển thị thông báo sao lưu dữ liệu thành công.
-*   **Luồng ngoại lệ:**
-    *   *EX-AD-04-01 (Lỗi đĩa đầy):* Bộ nhớ máy chủ không đủ để tạo file sao lưu. Hệ thống dừng thao tác và hiển thị cảnh báo lỗi: "Không thể thực hiện sao lưu do bộ nhớ máy chủ đầy".
-
-#### UC22: Phục hồi dữ liệu
-*   **Mô tả:** Admin khôi phục lại trạng thái dữ liệu hệ thống từ một bản sao lưu đã được tạo trước đó.
-*   **Tác nhân:** Admin.
-*   **Điều kiện tiên quyết:** Đã đăng nhập bằng tài khoản Admin. Có ít nhất một bản sao lưu hợp lệ trong lịch sử.
-*   **Điều kiện sau khi hoàn thành:** Cơ sở dữ liệu hệ thống được ghi đè về trạng thái của file sao lưu được chọn.
-*   **Luồng sự kiện chính:**
-    1.  Admin truy cập mục "Sao lưu & Phục hồi".
-    2.  Admin chọn một file sao lưu trong danh sách lịch sử và nhấn chọn nút "Phục hồi dữ liệu".
-    3.  Hệ thống hiển thị hộp thoại cảnh báo nghiêm trọng và yêu cầu Admin nhập chuỗi xác nhận `CONFIRM` (phân biệt chữ hoa chữ thường).
-    4.  Admin nhập chuỗi `CONFIRM` và nhấn nút "Bắt đầu phục hồi".
-    5.  Hệ thống kích hoạt "Chế độ bảo trì", ngắt kết nối và chặn tạm thời mọi truy cập từ người dùng thường (client hiển thị màn hình bảo trì).
-    6.  Hệ thống thực hiện nhập (import) dữ liệu từ file sao lưu đã chọn để ghi đè cơ sở dữ liệu hiện tại.
-    7.  Hệ thống hoàn tất phục hồi, tắt chế độ bảo trì, khởi động lại các tiến trình và ghi nhận hành động phục hồi vào Audit Log.
-    8.  Hệ thống hiển thị thông báo phục hồi thành công.
-*   **Luồng ngoại lệ:**
-    *   *EX-AD-05-01 (Nhập sai chuỗi xác nhận):* Admin nhập chuỗi xác nhận không chính xác. Hệ thống hủy bỏ thao tác phục hồi và thông báo: "Xác nhận không thành công. Chuỗi nhập vào không khớp".
-    *   *EX-AD-05-02 (File sao lưu bị hỏng):* Hệ thống phát hiện file sao lưu bị lỗi trong quá trình import. Hệ thống tự động khôi phục (rollback) về trạng thái dữ liệu ngay trước khi phục hồi, tắt chế độ bảo trì và hiển thị cảnh báo: "Lỗi! File sao lưu bị hỏng. Dữ liệu đã được khôi phục nguyên trạng".
 
 ---
 
@@ -578,14 +561,19 @@ Dưới đây là danh sách các yêu cầu chức năng (FR) được chuẩn 
 | **FR-AUTH-04** | Khởi tạo phiên làm việc (Session/Token) bảo mật và chuyển hướng người dùng khi đăng nhập thành công. | UC02 |
 | **FR-AUTH-05** | Ngăn chặn đăng nhập đối với tài khoản đã bị khóa (Deactivated) và hiển thị thông báo liên hệ Admin. | UC02 |
 | **FR-AUTH-06** | Hủy bỏ hoàn toàn phiên làm việc của người dùng hiện tại ở cả client và server khi đăng xuất. | UC03 |
-| **FR-JO-01** | Cho phép người dùng tạo bài viết nhật ký mới với các trường: Tiêu đề, Nội dung, Cảm xúc (1-5), Nhãn chủ đề, và Ảnh đính kèm. | UC04 |
-| **FR-JO-02** | Giới hạn kích thước file hình ảnh đính kèm trong bài nhật ký tối đa là 5MB. | UC04 |
+| **FR-JO-01** | Cho phép người dùng tạo bài viết nhật ký mới với các trường: Tiêu đề, Nội dung, Cảm xúc (1-5), Nhãn chủ đề, ảnh/video đính kèm và thẻ địa điểm. | UC04 |
+| **FR-JO-02** | Giới hạn kích thước file hình ảnh đính kèm ban đầu trước khi tải lên tối đa là 5MB. | UC04 |
 | **FR-JO-03** | Cho phép người dùng chỉnh sửa nội dung của các bài viết nhật ký do chính họ sở hữu. | UC05 |
 | **FR-JO-04** | Cho phép người dùng xóa bài viết nhật ký của mình (hỗ trợ xóa mềm để có thể khôi phục). | UC05 |
-| **FR-JO-05** | Ngăn chặn các tài khoản khác sửa/xóa bài nhật ký không thuộc sở hữu và trả về mã lỗi 403. | UC05 |
+| **FR-JO-05** | Ngăn chặn các tài khoản khác sửa/xóa bài nhật ký không thuộc sở hữu, hệ thống Backend trả về HTTP Status Code 403 và Client hiển thị thông báo lỗi tương ứng trên giao diện Mobile. | UC05 |
 | **FR-JO-06** | Hiển thị danh sách các bài viết nhật ký của người dùng hiện tại, sắp xếp mặc định từ mới nhất đến cũ nhất. | UC06 |
 | **FR-JO-07** | Cung cấp bộ lọc bài viết theo nhãn chủ đề, điểm cảm xúc và tìm kiếm theo từ khóa trong tiêu đề/nội dung. | UC06 |
-| **FR-JO-08** | Cho phép người nhận gửi báo cáo vi phạm đối với nội dung Time Capsule nhận được lên Admin. | UC07 |
+| **FR-JO-08** | Cho phép người nhận gửi báo cáo vi phạm đối với nội dung Time Capsule nhận được lên hệ thống. | UC07 |
+| **FR-JO-09** | Cho phép xem Feed nhóm, hỗ trợ phân trang (pagination) tải dữ liệu tối ưu theo từng trang. | UC26 |
+| **FR-JO-10** | Cho phép thả cảm xúc (Reaction) và gửi bình luận (Comment) trên các bài viết/feed nhóm. | UC27 |
+| **FR-JO-11** | Hỗ trợ đính kèm hình ảnh và video vào bài viết nhật ký/feed, tải lên lưu trữ đám mây qua S3 hoặc Cloudinary. | UC28 |
+| **FR-JO-12** | Tự động tối ưu hóa và nén video (video compression) phía client trước khi upload lên Cloud Storage để tối ưu băng thông. | UC28 |
+| **FR-JO-13** | Tích hợp Map Picker (Google Maps hoặc Mapbox API) để chọn, định vị và gắn tag địa điểm vào bài viết nhật ký/feed. | UC29 |
 | **FR-TC-01** | Cho phép người dùng soạn thảo Time Capsule mới gồm Tiêu đề và Nội dung. | UC08 |
 | **FR-TC-02** | Cho phép người dùng thiết lập thời gian mở khóa trong tương lai cho Time Capsule. | UC09 |
 | **FR-TC-03** | Mã hóa nội dung thô và chặn mọi quyền đọc/truy cập đối với các Time Capsule đang ở trạng thái khóa. | UC09 |
@@ -602,18 +590,10 @@ Dưới đây là danh sách các yêu cầu chức năng (FR) được chuẩn 
 | **FR-MT-05** | Tự động tìm kiếm và hiển thị khối thông tin ký ức "Ngày này năm xưa" nếu có bài viết trùng ngày-tháng trong lịch sử. | UC17 |
 | **FR-GC-01** | Cho phép người dùng khởi tạo phiên Group Check-in mới với tiêu đề, thời gian đếm ngược (phút) và danh sách thành viên (báo lỗi nếu thời gian giới hạn đếm ngược nhỏ hơn hoặc bằng 0). | UC23 |
 | **FR-GC-02** | Tự động gửi thông báo đồng thời (push notification) cho toàn bộ các thành viên được chỉ định ngay khi phiên check-in nhóm được kích hoạt. | UC23, UC25 |
-| **FR-GC-03** | Hiển thị giao diện chung của phiên check-in nhóm có đồng hồ đếm ngược hiển thị theo thời gian thực (real-time) cho tất cả thành viên. | UC24 |
-| **FR-GC-04** | Cho phép các thành viên lựa chọn trạng thái hoạt động hiện tại (Đang học, Đang ăn, Đang làm việc...) và gửi check-in (Hỗ trợ ghi đè/cập nhật lại trạng thái nếu gửi nhiều lần trong cùng một phiên). | UC24 |
-| **FR-GC-05** | Tự động cập nhật tức thời (real-time) và hiển thị trạng thái check-in của các thành viên lên bảng theo dõi chung của phiên. | UC24 |
+| **FR-GC-03** | Hiển thị giao diện phòng nhóm kết nối WebSocket thời gian thực (real-time), hiển thị trạng thái trực tuyến (online/offline) của từng thành viên kèm đồng hồ đếm ngược. | UC24 |
+| **FR-GC-04** | Cho phép các thành viên check-in bằng cách chụp ảnh từ Camera native (Front/Back) và nhập trạng thái hoạt động hiện tại (Hỗ trợ cập nhật/ghi đè trạng thái trong cùng phiên). | UC24 |
+| **FR-GC-05** | Tự động phát trực tiếp (Broadcast) hình ảnh check-in và trạng thái mới tới toàn bộ thành viên đang online trong phòng nhóm ngay lập tức qua WebSocket. | UC24 |
 | **FR-GC-06** | Tự động vô hiệu hóa quyền check-in của thành viên và khóa lưu trữ thông tin khi đồng hồ đếm ngược của phiên kết thúc (về 0). | UC24 |
-| **FR-AD-01** | Cung cấp màn hình Dashboard hiển thị biểu đồ và số liệu thống kê tổng hợp hoạt động của hệ thống cho Admin. | UC18 |
-| **FR-AD-02** | Hiển thị danh sách tài khoản người dùng và cho phép Admin thay đổi trạng thái hoạt động (khóa/kích hoạt lại). | UC19 |
-| **FR-AD-03** | Hủy phiên đăng nhập của người dùng ngay lập tức khi tài khoản của họ bị Admin khóa. | UC19 |
-| **FR-AD-04** | Hiển thị danh sách các báo cáo vi phạm và cho phép Admin xem nội dung chi tiết của Time Capsule bị báo cáo. | UC20 |
-| **FR-AD-05** | Cho phép Admin phê duyệt xử lý báo cáo: bác bỏ báo cáo hoặc gỡ bỏ hoàn toàn Capsule vi phạm. | UC20 |
-| **FR-AD-06** | Cho phép Admin tạo bản sao lưu cơ sở dữ liệu hệ thống dưới dạng tệp nén bảo mật lưu trên máy chủ hoặc tải về. | UC21 |
-| **FR-AD-07** | Cho phép Admin khôi phục cơ sở dữ liệu từ file sao lưu cũ sau khi nhập đúng chuỗi xác nhận `CONFIRM`. | UC22 |
-| **FR-AD-08** | Tự động chuyển hệ thống sang "Chế độ bảo trì" (ngắt kết nối client) trong suốt quá trình phục hồi dữ liệu. | UC22 |
 
 ---
 
@@ -621,12 +601,14 @@ Dưới đây là danh sách các yêu cầu chức năng (FR) được chuẩn 
 
 ### 6.1 Độ bảo mật & Riêng tư (Security & Privacy)
 *   **Mật mã hóa:** Mật khẩu người dùng bắt buộc phải được mã hóa một chiều (hashing sử dụng thuật toán băm mạnh kèm muối như bcrypt) trước khi lưu trữ dưới cơ sở dữ liệu.
-*   **Quyền riêng tư dữ liệu nhật ký:** Nội dung bài viết nhật ký cá nhân và Time Capsule khi chưa mở khóa tuyệt đối không được hiển thị cho bất kỳ bên thứ ba nào (bao gồm cả Admin, ngoại trừ thông tin tiêu đề/nội dung bài viết bị báo cáo vi phạm trong màn hình kiểm duyệt của Admin).
+*   **Quyền riêng tư dữ liệu nhật ký:** Nội dung bài viết nhật ký cá nhân và Time Capsule khi chưa mở khóa tuyệt đối không được hiển thị cho bất kỳ bên thứ ba nào.
 *   **Bảo vệ Time Capsule:** Nội dung của Time Capsule đang khóa không được phép truyền tải về phía Client dưới dạng thô để tránh việc người dùng sử dụng các công cụ kiểm tra API hoặc Inspect Element để đọc trước hạn. Dữ liệu chỉ được giải mã và gửi từ server sau khi đã kiểm tra thời gian hợp lệ.
 
 ### 6.2 Hiệu năng (Performance)
 *   **Thời gian phản hồi:** Thời gian tải danh sách nhật ký và vẽ biểu đồ SVG Mood Tracking phải dưới 1.0 giây trong điều kiện kết nối mạng tiêu chuẩn (3G/4G/Wifi thông thường).
 *   **Đồng hồ đếm ngược:** Đồng hồ đếm ngược của Time Capsule (UC11) và Group Check-in (UC24) phải hoạt động mượt mà, cập nhật mỗi giây một lần mà không gây treo/đơ trình duyệt hoặc tiêu tốn quá nhiều CPU của client.
+*   **Tối ưu dung lượng Media:** Tệp video phải được nén phía client trước khi upload với tỉ lệ giảm dung lượng tối thiểu 50% so với file gốc mà vẫn đảm bảo độ phân giải hiển thị rõ ràng.
+*   **Trễ truyền dữ liệu WebSocket:** Thời gian truyền trạng thái check-in và hình ảnh từ một client đến tất cả các client khác trong nhóm thông qua WebSocket server phải dưới 500ms trong điều kiện kết nối mạng ổn định.
 
 ### 6.3 Tính khả dụng (Usability)
 *   **Giao diện đáp ứng (Responsive Layout):** Hệ thống giao diện phải được tối ưu hóa hiển thị tốt trên cả hai môi trường: Desktop (màn hình rộng) và Mobile (các dòng điện thoại thông minh tiêu chuẩn).
