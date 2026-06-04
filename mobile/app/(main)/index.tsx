@@ -1,30 +1,72 @@
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, Image } from 'react-native';
 import { router } from 'expo-router';
 
+// Mock data - khi backend xong thì thay bằng API call
+const MOCK_FEED = [
+  { id: '1', user: 'Dev 1', avatar: '👨‍💻', image: null, caption: 'Setup DB xong rồi 🎉', time: '2 phút trước', mode: 'group' },
+  { id: '2', user: 'Dev 4', avatar: '🎨', image: null, caption: 'Figma wireframe hoàn thiện!', time: '15 phút trước', mode: 'group' },
+  { id: '3', user: 'Bạn', avatar: '📱', image: null, caption: 'Camera đang test...', time: '1 giờ trước', mode: 'solo' },
+];
+
 export default function Home() {
-  const logout = async () => {
-    await AsyncStorage.removeItem('token');
-    router.replace('/(auth)/login');
-  };
+  const renderItem = ({ item }: any) => (
+    <View style={styles.card}>
+      <View style={styles.cardHeader}>
+        <Text style={styles.avatar}>{item.avatar}</Text>
+        <View>
+          <Text style={styles.username}>{item.user}</Text>
+          <Text style={styles.time}>{item.time}</Text>
+        </View>
+        <View style={[styles.modeBadge, item.mode === 'group' ? styles.groupBadge : styles.soloBadge]}>
+          <Text style={styles.modeTxt}>{item.mode === 'group' ? '👥 Nhóm' : '👤 Solo'}</Text>
+        </View>
+      </View>
+      <View style={styles.imagePlaceholder}>
+        <Text style={styles.imagePlaceholderTxt}>📷 Ảnh mock</Text>
+      </View>
+      <Text style={styles.caption}>{item.caption}</Text>
+    </View>
+  );
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>NhatKi 📓</Text>
-      <Text style={styles.subtitle}>🎉 Đăng nhập thành công!</Text>
-      <Text style={styles.note}>Home screen — Tuần 2 sẽ build tiếp</Text>
-      <TouchableOpacity style={styles.button} onPress={logout}>
-        <Text style={styles.buttonText}>Đăng xuất</Text>
-      </TouchableOpacity>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.title}>NhatKi 📓</Text>
+        <TouchableOpacity style={styles.cameraBtn} onPress={() => router.push('/(main)/camera')}>
+          <Text style={styles.cameraTxt}>📷</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Feed */}
+      <FlatList
+        data={MOCK_FEED}
+        keyExtractor={item => item.id}
+        renderItem={renderItem}
+        contentContainerStyle={styles.feed}
+        showsVerticalScrollIndicator={false}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0f0f1a', padding: 24 },
-  title: { fontSize: 36, fontWeight: 'bold', color: '#fff', marginBottom: 16 },
-  subtitle: { fontSize: 20, color: '#6C63FF', marginBottom: 8 },
-  note: { fontSize: 14, color: '#888', marginBottom: 48 },
-  button: { backgroundColor: '#1e1e2e', padding: 16, borderRadius: 10, paddingHorizontal: 32 },
-  buttonText: { color: '#ff6b6b', fontSize: 16, fontWeight: '600' },
+  container: { flex: 1, backgroundColor: '#0f0f1a' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, paddingTop: 56, backgroundColor: '#0f0f1a' },
+  title: { fontSize: 24, fontWeight: 'bold', color: '#fff' },
+  cameraBtn: { backgroundColor: '#6C63FF', width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
+  cameraTxt: { fontSize: 20 },
+  feed: { padding: 16, gap: 16 },
+  card: { backgroundColor: '#1e1e2e', borderRadius: 16, overflow: 'hidden' },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', padding: 12, gap: 10 },
+  avatar: { fontSize: 32 },
+  username: { color: '#fff', fontWeight: '600', fontSize: 15 },
+  time: { color: '#666', fontSize: 12 },
+  modeBadge: { marginLeft: 'auto', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
+  groupBadge: { backgroundColor: 'rgba(108,99,255,0.2)' },
+  soloBadge: { backgroundColor: 'rgba(74,222,128,0.2)' },
+  modeTxt: { fontSize: 12, color: '#fff' },
+  imagePlaceholder: { height: 200, backgroundColor: '#2a2a3e', justifyContent: 'center', alignItems: 'center' },
+  imagePlaceholderTxt: { color: '#444', fontSize: 16 },
+  caption: { color: '#ccc', padding: 12, fontSize: 14 },
 });
