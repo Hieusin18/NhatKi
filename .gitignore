@@ -6,3 +6,10 @@ coverage/
 *.log
 .env*
 !.env.example
+*.png
+*.jpg
+*.jpeg
+nodemon
+npm
+npx
+cnpm@1.0.0
