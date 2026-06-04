@@ -1,11 +1,11 @@
-import { View, Text, TouchableOpacity, StyleSheet, FlatList, Image } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList } from 'react-native';
 import { router } from 'expo-router';
 
 // Mock data - khi backend xong thì thay bằng API call
 const MOCK_FEED = [
-  { id: '1', user: 'Dev 1', avatar: '👨‍💻', image: null, caption: 'Setup DB xong rồi 🎉', time: '2 phút trước', mode: 'group' },
-  { id: '2', user: 'Dev 4', avatar: '🎨', image: null, caption: 'Figma wireframe hoàn thiện!', time: '15 phút trước', mode: 'group' },
-  { id: '3', user: 'Bạn', avatar: '📱', image: null, caption: 'Camera đang test...', time: '1 giờ trước', mode: 'solo' },
+  { id: '1', user: 'Dev 1', avatar: '👨‍💻', caption: 'Setup DB xong rồi 🎉', time: '2 phút trước', mode: 'group' },
+  { id: '2', user: 'Dev 4', avatar: '🎨', caption: 'Figma wireframe hoàn thiện!', time: '15 phút trước', mode: 'group' },
+  { id: '3', user: 'Bạn', avatar: '📱', caption: 'Camera đang test...', time: '1 giờ trước', mode: 'solo' },
 ];
 
 export default function Home() {
@@ -33,9 +33,14 @@ export default function Home() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>NhatKi 📓</Text>
-        <TouchableOpacity style={styles.cameraBtn} onPress={() => router.push('/(main)/camera')}>
-          <Text style={styles.cameraTxt}>📷</Text>
-        </TouchableOpacity>
+        <View style={styles.headerBtns}>
+          <TouchableOpacity style={styles.iconBtn} onPress={() => router.push('/(main)/capsule')}>
+            <Text style={styles.iconTxt}>⏳</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.iconBtn} onPress={() => router.push('/(main)/camera')}>
+            <Text style={styles.iconTxt}>📷</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Feed */}
@@ -54,8 +59,9 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0f0f1a' },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, paddingTop: 56, backgroundColor: '#0f0f1a' },
   title: { fontSize: 24, fontWeight: 'bold', color: '#fff' },
-  cameraBtn: { backgroundColor: '#6C63FF', width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
-  cameraTxt: { fontSize: 20 },
+  headerBtns: { flexDirection: 'row', gap: 8 },
+  iconBtn: { backgroundColor: '#6C63FF', width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
+  iconTxt: { fontSize: 20 },
   feed: { padding: 16, gap: 16 },
   card: { backgroundColor: '#1e1e2e', borderRadius: 16, overflow: 'hidden' },
   cardHeader: { flexDirection: 'row', alignItems: 'center', padding: 12, gap: 10 },
