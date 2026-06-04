@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Socket.io Realtime Client Control Center</title>
+  <!-- Google Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #0f172a 0%, #020617 100%);
+      --card-bg: rgba(30, 41, 59, 0.45);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --secondary: #10b981;
+      --secondary-hover: #059669;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --terminal-bg: rgba(15, 23, 42, 0.9);
+      --font-sans: 'Outfit', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --glow-shadow: 0 0 20px rgba(99, 102, 241, 0.35);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg-gradient);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      overflow-x: hidden;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      animation: fadeIn 0.8s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    header h1 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      background: linear-gradient(to right, #a5b4fc, #6366f1, #34d399);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 6px;
+    }
+
+    header p {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+
+    @media (min-width: 768px) {
+      .main-grid {
+        grid-template-columns: 350px 1fr;
+      }
+    }
+
+    /* Glass Card Panel */
+    .panel-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      transition: border 0.3s ease;
+    }
+
+    .panel-card:hover {
+      border-color: rgba(99, 102, 241, 0.25);
+    }
+
+    .section-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-main);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      padding-bottom: 10px;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--danger);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+
+    .status-badge.connected {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--secondary);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+    }
+
+    .status-badge.connecting {
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--warning);
+      border: 1px solid rgba(245, 158, 11, 0.25);
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 0.6; }
+      50% { opacity: 1; }
+      100% { opacity: 0.6; }
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    label {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      letter-spacing: 0.02em;
+    }
+
+    textarea {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 12px;
+      color: var(--text-main);
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      resize: none;
+      min-height: 100px;
+      transition: all 0.3s ease;
+      line-height: 1.4;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 12px rgba(99, 102, 241, 0.25);
+      background: rgba(15, 23, 42, 0.85);
+    }
+
+    .btn {
+      font-family: var(--font-sans);
+      font-size: 0.9rem;
+      font-weight: 600;
+      padding: 12px 20px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-hover);
+      transform: translateY(-2px);
+      box-shadow: var(--glow-shadow);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-main);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.12);
+      transform: translateY(-2px);
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background: #dc2626;
+      transform: translateY(-2px);
+    }
+
+    .btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      transform: none !important;
+      box-shadow: none !important;
+    }
+
+    .action-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* Terminal Console */
+    .terminal-container {
+      display: flex;
+      flex-direction: column;
+      background: var(--terminal-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      overflow: hidden;
+      height: 480px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    }
+
+    .terminal-header {
+      background: rgba(30, 41, 59, 0.7);
+      padding: 14px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .terminal-title {
+      font-size: 0.85rem;
+      font-family: var(--font-mono);
+      font-weight: 500;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .window-dots {
+      display: flex;
+      gap: 6px;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .console-body {
+      flex: 1;
+      padding: 16px 20px;
+      overflow-y: auto;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      line-height: 1.6;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .log-line {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      border-bottom: 1px solid rgba(255,255,255,0.02);
+      padding-bottom: 4px;
+      word-break: break-all;
+    }
+
+    .time {
+      color: #64748b;
+      flex-shrink: 0;
+      font-size: 0.75rem;
+    }
+
+    .tag {
+      flex-shrink: 0;
+      font-weight: 600;
+      font-size: 0.75rem;
+      padding: 1px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+
+    .tag-sys { background: #334155; color: #cbd5e1; }
+    .tag-conn { background: rgba(99, 102, 241, 0.2); color: #818cf8; }
+    .tag-event { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+    .tag-success { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+    .tag-err { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+
+    .msg-success { color: #a7f3d0; }
+    .msg-info { color: #e2e8f0; }
+    .msg-error { color: #fecaca; }
+    .msg-event { color: #fef08a; }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>Realtime Control Center</h1>
+      <p>Interactive web debugger client for convenience store websocket server</p>
+    </header>
+
+    <div class="main-grid">
+      <!-- Left Config Card -->
+      <div class="panel-card">
+        <div class="section-title">
+          <span>Configuration</span>
+          <div id="statusBadge" class="status-badge">Disconnected</div>
+        </div>
+
+        <div class="form-group">
+          <label for="jwtInput">Authentication JWT Token</label>
+          <textarea id="jwtInput" placeholder="Paste your authentication JWT token here..."></textarea>
+        </div>
+
+        <div class="action-group">
+          <button id="connectBtn" class="btn btn-primary">Connect Client</button>
+          <button id="disconnectBtn" class="btn btn-danger" style="display: none;">Disconnect</button>
+        </div>
+
+        <div class="section-title" style="margin-top: 10px;">
+          <span>Actions</span>
+        </div>
+
+        <div class="action-group">
+          <button id="getListBtn" class="btn btn-secondary" disabled>Get Online Members</button>
+          <button id="syncPhotosBtn" class="btn btn-secondary" disabled>Sync Missed Photos</button>
+        </div>
+      </div>
+
+      <!-- Right Log Console -->
+      <div class="terminal-container">
+        <div class="terminal-header">
+          <div class="terminal-title">
+            <div class="window-dots">
+              <div class="dot" style="background:#ef4444"></div>
+              <div class="dot" style="background:#f59e0b"></div>
+              <div class="dot" style="background:#10b981"></div>
+            </div>
+            <span>terminal_logs_console.log</span>
+          </div>
+          <button id="clearLogsBtn" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.75rem;">Clear Console</button>
+        </div>
+
+        <div id="consoleBody" class="console-body">
+          <div class="log-line">
+            <span class="time">00:00:00</span>
+            <span class="tag tag-sys">system</span>
+            <span class="msg-info">Console logger initialized. Paste JWT token and click Connect.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Load Socket.io Client library from CDN -->
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  
+  <script>
+    const jwtInput = document.getElementById('jwtInput');
+    const connectBtn = document.getElementById('connectBtn');
+    const disconnectBtn = document.getElementById('disconnectBtn');
+    const getListBtn = document.getElementById('getListBtn');
+    const syncPhotosBtn = document.getElementById('syncPhotosBtn');
+    const statusBadge = document.getElementById('statusBadge');
+    const consoleBody = document.getElementById('consoleBody');
+    const clearLogsBtn = document.getElementById('clearLogsBtn');
+
+    let socket = null;
+
+    // Helper function to append styled logs to our terminal window
+    function log(type, message) {
+      const now = new Date();
+      const timeStr = now.toTimeString().split(' ')[0];
+      
+      let tagClass = 'tag-sys';
+      let msgClass = 'msg-info';
+      
+      switch(type) {
+        case 'connection':
+          tagClass = 'tag-conn';
+          msgClass = 'msg-info';
+          break;
+        case 'success':
+          tagClass = 'tag-success';
+          msgClass = 'msg-success';
+          break;
+        case 'event':
+          tagClass = 'tag-event';
+          msgClass = 'msg-event';
+          break;
+        case 'error':
+          tagClass = 'tag-err';
+          msgClass = 'msg-error';
+          break;
+      }
+
+      const logRow = document.createElement('div');
+      logRow.className = 'log-line';
+      logRow.innerHTML = `
+        <span class="time">${timeStr}</span>
+        <span class="tag ${tagClass}">${type}</span>
+        <span class="${msgClass}">${message}</span>
+      `;
+      consoleBody.appendChild(logRow);
+      consoleBody.scrollTop = consoleBody.scrollHeight;
+    }
+
+    // Clear Console action
+    clearLogsBtn.addEventListener('click', () => {
+      consoleBody.innerHTML = '';
+      log('system', 'Console cleared.');
+    });
+
+    // Handle Connection
+    connectBtn.addEventListener('click', () => {
+      const token = jwtInput.value.trim();
+      if (!token) {
+        log('error', 'Authentication Token is empty! Please paste a valid JWT token.');
+        return;
+      }
+
+      log('connection', 'Connecting to websocket gateway at ws://localhost:5000...');
+      statusBadge.textContent = 'Connecting';
+      statusBadge.className = 'status-badge connecting';
+      connectBtn.disabled = true;
+
+      // Initialize Socket client connection
+      socket = io('http://localhost:5000', {
+        auth: {
+          token: token // Raw token or Bearer token (server accepts both)
+        },
+        transports: ['websocket']
+      });
+
+      // Handle successful connection
+      socket.on('connect', () => {
+        statusBadge.textContent = 'Online';
+        statusBadge.className = 'status-badge connected';
+        connectBtn.style.display = 'none';
+        disconnectBtn.style.display = 'inline-flex';
+        getListBtn.disabled = false;
+        syncPhotosBtn.disabled = false;
+        
+        log('success', `Connection established! Socket ID assigned: ${socket.id}`);
+      });
+
+      // Handle connection error / handshake failure
+      socket.on('connect_error', (error) => {
+        statusBadge.textContent = 'Disconnected';
+        statusBadge.className = 'status-badge';
+        connectBtn.disabled = false;
+        connectBtn.style.display = 'inline-flex';
+        disconnectBtn.style.display = 'none';
+        getListBtn.disabled = true;
+        syncPhotosBtn.disabled = true;
+        
+        log('error', `Connection Handshake Rejected: ${error.message}`);
+        socket = null;
+      });
+
+      // Handle disconnection
+      socket.on('disconnect', (reason) => {
+        statusBadge.textContent = 'Disconnected';
+        statusBadge.className = 'status-badge';
+        connectBtn.disabled = false;
+        connectBtn.style.display = 'inline-flex';
+        disconnectBtn.style.display = 'none';
+        getListBtn.disabled = true;
+        syncPhotosBtn.disabled = true;
+        
+        log('error', `Disconnected from server. Reason: ${reason}`);
+        socket = null;
+      });
+
+      // Listen: room:joined
+      socket.on('room:joined', (data) => {
+        log('success', `Room joined response: Room ID=${data.room_id}, User ID=${data.user_id}`);
+      });
+
+      // Listen: presence:online
+      socket.on('presence:online', (data) => {
+        log('event', `📢 Member Went ONLINE: user_id="${data.user_id}" (${data.username})`);
+      });
+
+      // Listen: presence:offline
+      socket.on('presence:offline', (data) => {
+        log('event', `🚫 Member Went OFFLINE: user_id="${data.user_id}" (${data.username})`);
+      });
+
+      // Listen: presence:list
+      socket.on('presence:list', (data) => {
+        const usersInfo = data.online_users.map(u => `• ${u.username} (id: ${u.user_id})`).join('<br>');
+        log('success', `👥 Active Group Presence List (Room: ${data.room_id}):<br>${usersInfo || 'No other members online'}`);
+      });
+
+      // Listen: photo:new
+      socket.on('photo:new', (data) => {
+        log('event', `📸 NEW Capture Broadcast!<br>• Photo ID: ${data.photo_id}<br>• URL: <a href="${data.url}" target="_blank" style="color: #60a5fa;">Click here to view</a><br>• Owner: ${data.owner_name} (id: ${data.owner_id})`);
+      });
+
+      // Listen: photo:sync_response
+      socket.on('photo:sync_response', (data) => {
+        const list = data.photos.map(p => `• Photo ID: ${p.photo_id} | Owner: ${p.owner_name} | Uploaded: ${p.uploaded_at}`).join('<br>');
+        log('success', `📸 Photo Sync Response:<br>${list || 'No photos uploaded since last sync'}`);
+      });
+    });
+
+    // Handle Disconnection Button click
+    disconnectBtn.addEventListener('click', () => {
+      if (socket) {
+        log('connection', 'Disconnecting client manually...');
+        socket.disconnect();
+      }
+    });
+
+    // Handle Action: Get List
+    getListBtn.addEventListener('click', () => {
+      if (socket) {
+        log('connection', 'Requesting online presence list (presence:get_list)...');
+        socket.emit('presence:get_list');
+      }
+    });
+
+    // Handle Action: Sync Photos
+    syncPhotosBtn.addEventListener('click', () => {
+      if (socket) {
+        const lastSync = new Date(Date.now() - 3600000).toISOString(); // 1 hour ago
+        log('connection', `Requesting photos sync from: ${lastSync}`);
+        socket.emit('photo:sync', { last_sync_time: lastSync });
+      }
+    });
+  </script>
+</body>
+</html>
