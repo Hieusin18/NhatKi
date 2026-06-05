@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # OSX
 #
 .DS_Store
@@ -73,3 +74,20 @@ yarn-error.log
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+=======
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+*.png
+*.jpg
+*.jpeg
+nodemon
+npm
+npx
+cnpm@1.0.0
+>>>>>>> 27614598caeed6312834b530a6f952f8ce4e5011
