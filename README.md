@@ -87,3 +87,4 @@ Hệ thống được thiết kế và phát triển tập trung xoay quanh mô 
 ## Kết luận
 
 Đây không chỉ là một ứng dụng nhật ký thông thường, mà là một hệ thống lưu trữ ký ức và cảm xúc toàn diện theo thời gian, giúp người dùng hiểu rõ và kết nối sâu sắc hơn với chính mình thông qua các dữ liệu cuộc sống hằng ngày.
+- **Link thiết kế UI (Dev 4 - Tuần 1):** [Xem tại đây](https://www.figma.com/make/hv8zZ7b3CEzy6ZDuWe36rN/Design-mobile-group-diary-UI?t=LzrOuNApdV4ZNbSn-1&preview-route=%2Ftimeline)
