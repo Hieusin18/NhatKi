@@ -1,8 +1,8 @@
-import { Server as HttpServer } from 'http';
-import { Server, Socket } from 'socket.io';
-import jwt from 'jsonwebtoken';
-import { RoomManager } from './room.manager';
-import { SOCKET_EVENTS } from './events';
+import { Socket, Server } from "socket.io";
+import { Server as HttpServer } from "http";
+import jwt from "jsonwebtoken";
+import { EVENTS } from "./events";
+import { SocketService } from "../services/socket.service";
 
 // Interface representing the JWT token payload structure
 export interface JwtUserPayload {
@@ -19,20 +19,9 @@ export interface CustomSocketData {
   groupId: string;
 }
 
-// Interface for photo broadcast payload
-export interface CaptureBroadcastData {
-  photo_id: string;
-  url: string;
-  owner_id: string;
-  owner_name: string;
-  group_id: string;
-  uploaded_at: string;
-}
-
 export class SocketHandler {
   private static instance: SocketHandler | null = null;
   private io: Server | null = null;
-  private roomManager = RoomManager.getInstance();
 
   private constructor() {}
 
@@ -95,86 +84,25 @@ export class SocketHandler {
     });
 
     // Connection handler
-    this.io.on(SOCKET_EVENTS.CONNECTION, (socket: Socket) => {
-      const { userId, username, groupId } = socket.data as CustomSocketData;
-
-      console.log(`[SocketHandler] Client connected: user_id=${userId}, username=${username}, group_id=${groupId}, socket_id=${socket.id}`);
-
-      // Delegate room joining and connection presence to RoomManager
-      this.roomManager.handleJoinRoom(socket, this.io!, userId, username, groupId);
-
-      // Handle synchronization of missed photos during temporary offline disconnect
-      socket.on(SOCKET_EVENTS.PHOTO_SYNC, (payload: { last_sync_time: string }) => {
-        console.log(`[SocketHandler] Client ${socket.id} (user_id=${userId}) requested photo sync from: ${payload?.last_sync_time}`);
-
-        // Mock some sync photos taken in the room after the last_sync_time
-        const lastSync = payload?.last_sync_time ? new Date(payload.last_sync_time) : new Date(Date.now() - 60000);
-        
-        const mockPhotos = [
-          {
-            photo_id: 'img_mock_11111',
-            url: 'https://res.cloudinary.com/del4dtz6a/image/upload/v1717500000/convenience_store/mock1.jpg',
-            owner_id: 'usr_mock_1',
-            owner_name: 'Minh Tuấn',
-            group_id: groupId,
-            uploaded_at: new Date(lastSync.getTime() + 5000).toISOString(),
-          },
-          {
-            photo_id: 'img_mock_22222',
-            url: 'https://res.cloudinary.com/del4dtz6a/image/upload/v1717500000/convenience_store/mock2.jpg',
-            owner_id: 'usr_mock_2',
-            owner_name: 'Thanh Thủy',
-            group_id: groupId,
-            uploaded_at: new Date(lastSync.getTime() + 10000).toISOString(),
-          },
-        ];
-
-        // Send response to the requesting client
-        socket.emit(SOCKET_EVENTS.PHOTO_SYNC_RESPONSE, {
-          photos: mockPhotos,
-        });
-      });
-
-      // Handle presence:get_list to retrieve current active group members
-      socket.on(SOCKET_EVENTS.PRESENCE_GET_LIST, () => {
-        console.log(`[SocketHandler] Client ${socket.id} (user_id=${userId}) requested online presence list for group: ${groupId}`);
-        
-        const onlineUsers = this.roomManager.getOnlineUsers(groupId);
-        socket.emit(SOCKET_EVENTS.PRESENCE_LIST, {
-          room_id: groupId,
-          online_users: onlineUsers,
-        });
-      });
-
-      // Handle disconnection
-      socket.on(SOCKET_EVENTS.DISCONNECT, (reason) => {
-        console.log(`[SocketHandler] Client disconnected: socket_id=${socket.id}, user_id=${userId}, reason=${reason}`);
-        this.roomManager.handleDisconnect(socket, this.io!, userId, username, groupId);
-      });
-
-      // Handle socket error events
-      socket.on(SOCKET_EVENTS.ERROR, (error) => {
-        console.error(`[SocketHandler] Socket error on client ${socket.id} (user_id=${userId}):`, error);
-      });
+    this.io.on(EVENTS.CONNECT, (socket: Socket) => {
+      console.log(`[SocketHandler] Client connected: socket_id=${socket.id}`);
+      registerSocketHandlers(this.io!, socket);
     });
 
     return this.io;
   }
 
-  // Broadcast a new image upload to all active members in the room (optionally excluding the uploader's socket)
-  public broadcastNewCapture(data: CaptureBroadcastData, excludeSocketId?: string): void {
+  // Broadcast helper in case other services need it
+  public broadcastNewCapture(data: any, excludeSocketId?: string): void {
     if (!this.io) {
       console.error('[SocketHandler] Cannot broadcast. Socket.io is not initialized.');
       return;
     }
-
-    const roomName = `room:${data.group_id}`;
-    console.log(`[SocketHandler] Broadcasting 'photo:new' to room ${roomName} (excludeSocketId: ${excludeSocketId || 'none'})`);
-
+    const roomName = data.group_id || data.groupId;
     if (excludeSocketId) {
-      this.io.to(roomName).except(excludeSocketId).emit(SOCKET_EVENTS.PHOTO_NEW, data);
+      this.io.to(roomName).except(excludeSocketId).emit(EVENTS.NEW_CAPTURE, data);
     } else {
-      this.io.to(roomName).emit(SOCKET_EVENTS.PHOTO_NEW, data);
+      this.io.to(roomName).emit(EVENTS.NEW_CAPTURE, data);
     }
   }
 
@@ -186,3 +114,19 @@ export class SocketHandler {
     return this.io;
   }
 }
+
+export const registerSocketHandlers = (io: Server, socket: Socket) => {
+  const { userId, groupId } = socket.data;
+  socket.join(groupId);
+  const isFirstDevice = SocketService.addUserConnection(userId, socket.id);
+  if (isFirstDevice) socket.to(groupId).emit(EVENTS.PRESENCE, { userId, status: "online" });
+  socket.emit(EVENTS.ONLINE_LIST, SocketService.getOnlineUsers());
+  socket.on(EVENTS.SHARE_CAPTURE, (data: { imageId: string; imageUrl: string }) => {
+    const payload = { groupId, imageId: data.imageId, senderId: userId, imageUrl: data.imageUrl, createdAt: new Date().toISOString() };
+    io.to(groupId).emit(EVENTS.NEW_CAPTURE, payload);
+  });
+  socket.on(EVENTS.DISCONNECT, () => {
+    const isCompletelyOffline = SocketService.removeUserConnection(userId, socket.id);
+    if (isCompletelyOffline) io.to(groupId).emit(EVENTS.PRESENCE, { userId, status: "offline" });
+  });
+};
