@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8">
+  <title>WebSocket Test Client - Tuần 2</title>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 20px;
+      background: #f4f6f9;
+      color: #333;
+    }
+
+    .container {
+      display: flex;
+      gap: 20px;
+    }
+
+    .panel {
+      flex: 1;
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-group {
+      margin-bottom: 12px;
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    input,
+    select {
+      width: 100%;
+      padding: 8px;
+      box-sizing: border-box;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    button {
+      padding: 10px 15px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button:hover {
+      background: #0056b3;
+    }
+
+    button.disconnect {
+      background: #dc3545;
+    }
+
+    button.disconnect:hover {
+      background: #bd2130;
+    }
+
+    #log-container {
+      background: #1e1e1e;
+      color: #76c176;
+      padding: 15px;
+      border-radius: 8px;
+      height: 350px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 13px;
+    }
+
+    .log-item {
+      margin-bottom: 6px;
+      border-bottom: 1px solid #333;
+      padding-bottom: 4px;
+    }
+
+    .log-err {
+      color: #ff6b6b;
+    }
+
+    .log-success {
+      color: #4dadf7;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h2>Hệ Thống Kiểm Thử Nghiệp Vụ Realtime - Tuần 2</h2>
+
+  <div class="container">
+    <div class="panel">
+      <h3>Cấu Hình Kết Nối</h3>
+      <div class="form-group">
+        <label>WebSocket Server URL:</label>
+        <input type="text" id="serverUrl" value="http://localhost:3000">
+      </div>
+      <div class="form-group">
+        <label>Giả lập Token (JWT mã hóa chứa User & Group):</label>
+        <select id="tokenSelect">
+          <option value="VALID_TOKEN_USER_A_GROUP_1">User A - Nhóm 1 (Hợp lệ)</option>
+          <option value="VALID_TOKEN_USER_B_GROUP_1">User B - Nhóm 1 (Hợp lệ)</option>
+          <option value="VALID_TOKEN_USER_C_GROUP_2">User C - Nhóm 2 (Hợp lệ)</option>
+          <option value="EXPIRED_TOKEN">Token hết hạn (Không hợp lệ)</option>
+          <option value="INVALID_TOKEN">Token sai định dạng (Không hợp lệ)</option>
+          <option value="">Không gửi kèm Token</option>
+        </select>
+      </div>
+      <button id="btnConnect">Connect (Kết nối)</button>
+      <button id="btnDisconnect" class="disconnect">Disconnect (Ngắt)</button>
+
+      <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
+
+      <h3>Nghiệp Vụ 2: Broadcast Ảnh Chụp</h3>
+      <div class="form-group">
+        <label>Mã ảnh (Image ID):</label>
+        <input type="text" id="imageId" value="IMG_9999">
+      </div>
+      <div class="form-group">
+        <label>Đường dẫn ảnh (URL):</label>
+        <input type="text" id="imageUrl" value="https://storage.workspace.com/captures/img_9999.png">
+      </div>
+      <button id="btnShareCapture">Gửi sự kiện Share Capture</button>
+    </div>
+
+    <div class="panel" style="flex: 1.5;">
+      <h3>Dữ liệu Realtime Nhận Được (Event Log)</h3>
+      <div id="log-container"></div>
+      <button id="btnClearLog" style="margin-top: 10px; background: #6c757d;">Xóa màn hình Log</button>
+    </div>
+  </div>
+
+  <script>
+    let socket = null;
+    const logContainer = document.getElementById('log-container');
+
+    function addLog(message, type = '') {
+      const time = new Date().toLocaleTimeString();
+      const div = document.createElement('div');
+      div.className = `log-item ${type}`;
+      div.innerText = `[${time}] ${message}`;
+      logContainer.appendChild(div);
+      logContainer.scrollTop = logContainer.scrollHeight;
+    }
+
+    document.getElementById('btnConnect').onclick = () => {
+      const url = document.getElementById('serverUrl').value;
+      const token = document.getElementById('tokenSelect').value;
+
+      if (socket && socket.connected) {
+        addLog('Cảnh báo: Bạn đang có một kết nối đang hoạt động.', 'log-err');
+        return;
+      }
+
+      addLog(`Đang thử kết nối tới Server: ${url}...`);
+
+      // Khởi tạo kết nối truyền token qua cấu hình auth theo đặc tả
+      socket = io(url, {
+        auth: { token: token },
+        transports: ['websocket'],
+        forceNew: true
+      });
+
+      // Lắng nghe sự kiện kết nối thành công
+      socket.on('connect', () => {
+        addLog('KẾT NỐI THÀNH CÔNG! Đang trong trạng thái Online.', 'log-success');
+      });
+
+      // Lắng nghe sự kiện hệ thống trả về danh sách online ban đầu
+      socket.on('online-list', (data) => {
+        addLog(`Danh sách thành viên đang Online hiện tại: ${JSON.stringify(data)}`, 'log-success');
+      });
+
+      // Nghiệp vụ 2: Lắng nghe tin nhắn Broadcast ảnh chụp từ server
+      socket.on('new-capture', (data) => {
+        addLog(`[SỰ KIỆN] Nhận ảnh chụp từ phòng: ${JSON.stringify(data)}`, 'log-success');
+      });
+
+      // Nghiệp vụ 3: Lắng nghe sự kiện thay đổi trạng thái thành viên (Presence)
+      socket.on('presence', (data) => {
+        addLog(`[SỰ KIỆN] Cập nhật trạng thái thành viên: ${JSON.stringify(data)}`);
+      });
+
+      // Lắng nghe lỗi xác thực hoặc lỗi kết nối từ server
+      socket.on('connect_error', (err) => {
+        addLog(`KẾT NỐI THẤT BẠI: ${err.message}`, 'log-err');
+      });
+
+      socket.on('disconnect', (reason) => {
+        addLog(`Đã ngắt kết nối với server. Lý do: ${reason}`, 'log-err');
+      });
+    };
+
+    document.getElementById('btnDisconnect').onclick = () => {
+      if (socket) {
+        socket.disconnect();
+      }
+    };
+
+    // Nghiệp vụ 2: Gửi gói tin giả lập từ Client lên Server
+    document.getElementById('btnShareCapture').onclick = () => {
+      if (!socket || !socket.connected) {
+        addLog('Lỗi: Chưa thiết lập kết nối WebSocket với Server!', 'log-err');
+        return;
+      }
+      const payload = {
+        imageId: document.getElementById('imageId').value,
+        imageUrl: document.getElementById('imageUrl').value
+      };
+      socket.emit('share-capture', payload);
+      addLog(`Đã gửi lệnh phát ảnh [share-capture]: ${JSON.stringify(payload)}`);
+    };
+
+    document.getElementById('btnClearLog').onclick = () => logContainer.innerHTML = '';
+  </script>
+</body>
+
+</html>
