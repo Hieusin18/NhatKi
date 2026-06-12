@@ -5,7 +5,7 @@ import {
   Text,
   Image,
   StyleSheet,
-  ActivityIndicator,
+  ActivityIndicator,git status
   TouchableOpacity,
 } from "react-native";
 
