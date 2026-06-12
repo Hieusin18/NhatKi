@@ -5,7 +5,7 @@ import {
   Text,
   Image,
   StyleSheet,
-  ActivityIndicator,git status
+  ActivityIndicator,
   TouchableOpacity,
 } from "react-native";
 
@@ -33,9 +33,13 @@ export default function ProfileScreen() {
   return (
     <View style={styles.container}>
       <Image source={{ uri: profile.avatar }} style={styles.avatar} />
+
       <Text style={styles.name}>{profile.name}</Text>
+
       <Text style={styles.email}>{profile.email}</Text>
+
       <Text>{profile.bio}</Text>
+
       <TouchableOpacity
         style={styles.button}
         onPress={() => {
