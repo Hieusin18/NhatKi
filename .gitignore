@@ -91,3 +91,28 @@ npm
 npx
 cnpm@1.0.0
 >>>>>>> 27614598caeed6312834b530a6f952f8ce4e5011
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Env & secrets (KHÔNG commit)
+.env
+.env.*
+!.env.example
+!deploy/.env.production.example
+
+# DevOps runtime
+deploy/nginx/certs/
+deploy/backups/
+deploy/grafana-data/
+
+# Logs & build
+*.log
+dist/
+build/
+coverage/
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/

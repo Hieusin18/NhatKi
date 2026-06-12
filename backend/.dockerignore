@@ -1,0 +1,16 @@
+node_modules
+npm-debug.log
+.git
+.gitignore
+.env
+.env.*
+!.env.production.example
+*.md
+docs
+tests
+coverage
+.vscode
+.idea
+Dockerfile
+.dockerignore
+monitoring

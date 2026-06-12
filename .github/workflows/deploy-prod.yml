@@ -1,0 +1,90 @@
+name: Deploy Production
+
+# Triggers khi push tag dạng v* hoặc chạy thủ công
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  # ---------- 1. Build & push images (api + realtime) ----------
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        include:
+          - name: backend
+            context: .
+            dockerfile: Dockerfile
+          - name: realtime
+            context: ./backend
+            dockerfile: backend/Dockerfile
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository }}-${{ matrix.name }}
+          tags: |
+            type=ref,event=tag
+            type=sha
+            latest
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ---------- 2. Deploy lên server production ----------
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: production   # bật required reviewers để duyệt thủ công
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          script: |
+            cd /opt/setlog/deploy
+            echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            export IMAGE_TAG=${{ github.ref_name }}
+            ./scripts/deploy.sh
+
+  # ---------- 3. Smoke test sau deploy ----------
+  smoke-test:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check /health
+        run: |
+          for i in $(seq 1 10); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" https://api.setlog.app/health)
+            if [ "$code" = "200" ]; then echo "Healthy ✅"; exit 0; fi
+            echo "Attempt $i: got $code, retrying..."; sleep 6
+          done
+          echo "Health check failed ❌"; exit 1

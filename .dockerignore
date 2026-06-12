@@ -1,0 +1,21 @@
+# Build context = gốc repo -> chỉ cần src/ + package.json cho image REST API
+node_modules
+npm-debug.log
+.git
+.gitignore
+.env
+.env.*
+!.env.production.example
+*.md
+docs
+tests
+coverage
+.vscode
+.idea
+Dockerfile
+.dockerignore
+# Loại các phần không thuộc image REST API
+deploy
+backend
+mobile
+monitoring
