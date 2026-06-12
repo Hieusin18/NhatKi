@@ -1,8 +1,9 @@
 require('dotenv').config();
-const express       = require('express');
+const express = require('express');
 const { sequelize } = require('./models/index');
 
 const app = express();
+
 app.use(express.json());
 
 // CORS
@@ -16,12 +17,9 @@ app.use((req, res, next) => {
 
 // Routes
 app.get('/', (req, res) => res.json({ message: '📔 Diary API is running!' }));
-app.use('/auth',   require('./routes/auth'));
+app.use('/auth', require('./routes/auth'));
 app.use('/groups', require('./routes/groups'));
-app.use('/diary',  require('./routes/diary'));
-app.use('/feed',   require('./routes/feed'));
-app.use('/tags',   require('./routes/tags'));
-app.use('/capsules', require('./routes/capsules'));
+app.use('/diary', require('./routes/diary'));
 
 // 404 handler
 app.use((req, res) => res.status(404).json({ message: 'Route not found.' }));
@@ -32,19 +30,21 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: 'Server error.' });
 });
 
-async function start() {
-  try {
-    await sequelize.authenticate();
-    console.log('✅ Database connected!');
-    app.listen(process.env.PORT || 3000, () => {
-      console.log(`🚀 Server running at http://localhost:${process.env.PORT || 3000}`);
-    });
-  } catch (err) {
-    console.error('❌ Cannot connect to database:', err.message);
-    process.exit(1);
+// Chỉ listen khi không phải môi trường test
+if (process.env.NODE_ENV !== 'test') {
+  async function start() {
+    try {
+      await sequelize.authenticate();
+      console.log('✅ Database connected!');
+      app.listen(process.env.PORT || 3000, () => {
+        console.log(`🚀 Server running at http://localhost:${process.env.PORT || 3000}`);
+      });
+    } catch (err) {
+      console.error('❌ Cannot connect to database:', err.message);
+      process.exit(1);
+    }
   }
+  start();
 }
 
-start();
-
-
+module.exports = app;
