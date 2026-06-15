@@ -1,0 +1,12 @@
+# Setlog - Tự động nạp dashboard khi Grafana khởi động
+apiVersion: 1
+
+providers:
+  - name: setlog
+    orgId: 1
+    folder: Setlog
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /etc/grafana/dashboards

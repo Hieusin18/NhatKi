@@ -1,0 +1,59 @@
+# Setlog - Alert rules
+groups:
+  - name: setlog-availability
+    rules:
+      - alert: BackendDown
+        expr: up{job="setlog-backend"} == 0
+        for: 1m
+        labels: { severity: critical }
+        annotations:
+          summary: "Backend API không phản hồi"
+          description: "Job setlog-backend down trên 1 phút."
+
+      - alert: HighErrorRate
+        # >5% request trả 5xx trong 5 phút
+        expr: |
+          sum(rate(http_requests_total{status=~"5.."}[5m]))
+          / sum(rate(http_requests_total[5m])) > 0.05
+        for: 5m
+        labels: { severity: critical }
+        annotations:
+          summary: "Tỉ lệ lỗi 5xx cao"
+          description: "Trên 5% request lỗi 5xx trong 5 phút qua."
+
+      - alert: HighLatencyP95
+        # p95 latency > 1s
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) > 1
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: "Độ trễ p95 cao (>1s)"
+          description: "API phản hồi chậm trong 5 phút qua."
+
+  - name: setlog-resources
+    rules:
+      - alert: HighCpuUsage
+        expr: 100 - (avg by(instance)(rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 85
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: "CPU > 85%"
+          description: "CPU server cao kéo dài 10 phút."
+
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 90
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: "RAM > 90%"
+          description: "Bộ nhớ gần đầy, nguy cơ OOM."
+
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 15
+        for: 5m
+        labels: { severity: critical }
+        annotations:
+          summary: "Dung lượng đĩa còn <15%"
+          description: "Cần dọn log/backup hoặc mở rộng đĩa."

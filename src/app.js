@@ -5,6 +5,7 @@ const { sequelize } = require('./models/index');
 const app = express();
 
 app.use(express.json());
+
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger');
 
