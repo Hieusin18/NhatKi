@@ -11,7 +11,9 @@
     "test": "jest --testEnvironment=node --forceExit --runInBand"
   },
   "jest": {
-    "testMatch": ["**/tests/**/*.test.js"]
+    "testMatch": [
+      "**/tests/**/*.test.js"
+    ]
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -20,6 +22,8 @@
     "jsonwebtoken": "^9.0.0",
     "mysql2": "^3.3.0",
     "sequelize": "^6.31.1",
+    "swagger-jsdoc": "^6.3.0",
+    "swagger-ui-express": "^5.0.1",
     "uuid": "^9.0.0"
   },
   "devDependencies": {
@@ -28,4 +32,3 @@
     "supertest": "^7.2.2"
   }
 }
-

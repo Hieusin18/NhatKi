@@ -1,31 +1,139 @@
-const express      = require('express');
-const router       = express.Router();
-const auth         = require('../middlewares/auth');
-const diaryCtrl    = require('../controllers/diaryController');
-const tagCtrl      = require('../controllers/tagController');
-const reactionCtrl = require('../controllers/reactionController');
+const express = require('express');
+const router = express.Router();
+const auth = require('../middlewares/auth');
+const ctrl = require('../controllers/diaryController');
 
-// Diary CRUD
-router.get('/timeline',         auth, diaryCtrl.getTimeline);
-router.get('/search',           auth, tagCtrl.searchByTag);
-router.post('/',                auth, diaryCtrl.create);
-router.get('/:id',              auth, diaryCtrl.getOne);
-router.put('/:id',              auth, diaryCtrl.update);
-router.delete('/:id',           auth, diaryCtrl.remove);
-router.patch('/:id/visibility', auth, diaryCtrl.updateVisibility);
+/**
+ * @swagger
+ * /diary:
+ *   post:
+ *     summary: Tạo nhật ký mới
+ *     tags: [Diary]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [title, content, entryDate]
+ *             properties:
+ *               title:
+ *                 type: string
+ *                 example: Ngày đẹp trời
+ *               content:
+ *                 type: string
+ *                 example: Hôm nay mình đi chơi
+ *               mood:
+ *                 type: string
+ *                 example: happy
+ *               entryDate:
+ *                 type: string
+ *                 example: "2024-06-01"
+ *               visibility:
+ *                 type: string
+ *                 enum: [private, public, group]
+ *                 example: private
+ *     responses:
+ *       201:
+ *         description: Tạo nhật ký thành công
+ *       401:
+ *         description: Chưa đăng nhập
+ */
+router.post('/', auth, ctrl.create);
 
-// Tags
-router.post('/:diaryId/tags',          auth, tagCtrl.attachTag);
-router.delete('/:diaryId/tags/:tagId', auth, tagCtrl.detachTag);
+/**
+ * @swagger
+ * /diary/timeline:
+ *   get:
+ *     summary: Lấy danh sách nhật ký theo timeline
+ *     tags: [Diary]
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           example: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           example: 10
+ *     responses:
+ *       200:
+ *         description: Danh sách nhật ký
+ *       401:
+ *         description: Chưa đăng nhập
+ */
+router.get('/timeline', auth, ctrl.getTimeline);
 
-// Reactions
-router.post('/:diaryId/reactions',   auth, reactionCtrl.addReaction);
-router.delete('/:diaryId/reactions', auth, reactionCtrl.removeReaction);
-router.get('/:diaryId/reactions',    auth, reactionCtrl.getReactions);
+/**
+ * @swagger
+ * /diary/search:
+ *   get:
+ *     summary: Tìm kiếm nhật ký theo tag
+ *     tags: [Diary]
+ *     parameters:
+ *       - in: query
+ *         name: tag
+ *         schema:
+ *           type: string
+ *           example: gia dinh
+ *     responses:
+ *       200:
+ *         description: Danh sách nhật ký theo tag
+ *       401:
+ *         description: Chưa đăng nhập
+ */
+router.get('/search', auth, ctrl.searchByTag);
 
-// Comments
-router.post('/:diaryId/comments',              auth, reactionCtrl.addComment);
-router.get('/:diaryId/comments',               auth, reactionCtrl.getComments);
-router.delete('/:diaryId/comments/:commentId', auth, reactionCtrl.deleteComment);
+/**
+ * @swagger
+ * /diary/{id}:
+ *   get:
+ *     summary: Lấy chi tiết nhật ký
+ *     tags: [Diary]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Chi tiết nhật ký
+ *       401:
+ *         description: Chưa đăng nhập
+ */
+router.get('/:id', auth, ctrl.getOne);
+
+/**
+ * @swagger
+ * /diary/{id}/visibility:
+ *   patch:
+ *     summary: Cập nhật visibility của nhật ký
+ *     tags: [Diary]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               visibility:
+ *                 type: string
+ *                 enum: [private, public, group]
+ *     responses:
+ *       200:
+ *         description: Cập nhật thành công
+ *       401:
+ *         description: Chưa đăng nhập
+ */
+router.patch('/:id/visibility', auth, ctrl.updateVisibility);
 
 module.exports = router;

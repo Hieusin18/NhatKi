@@ -5,6 +5,8 @@ const { sequelize } = require('./models/index');
 const app = express();
 
 app.use(express.json());
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./config/swagger');
 
 // CORS
 app.use((req, res, next) => {
@@ -16,6 +18,7 @@ app.use((req, res, next) => {
 });
 
 // Routes
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.get('/', (req, res) => res.json({ message: '📔 Diary API is running!' }));
 app.use('/auth', require('./routes/auth'));
 app.use('/groups', require('./routes/groups'));

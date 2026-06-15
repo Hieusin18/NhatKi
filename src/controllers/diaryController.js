@@ -129,3 +129,62 @@ exports.updateVisibility = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+// GET /diary/search?tag=
+exports.searchByTag = async (req, res) => {
+  try {
+    const { tag } = req.query;
+    if (!tag) return res.status(400).json({ message: 'tag is required.' });
+
+    const entries = await DiaryEntry.findAll({
+      include: [{
+        model: Tag,
+        as: 'tags',
+        through: { attributes: [] },
+        where: { name: tag },
+      }],
+      where: { userId: req.user.id },
+      order: [['entryDate', 'DESC']],
+    });
+
+    res.json({ data: entries });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// POST /diary/:id/tags
+exports.attachTag = async (req, res) => {
+  try {
+    const { tag_name } = req.body;
+    if (!tag_name) return res.status(400).json({ message: 'tag_name is required.' });
+
+    const diary = await DiaryEntry.findOne({
+      where: { id: req.params.id, userId: req.user.id }
+    });
+    if (!diary) return res.status(404).json({ message: 'Diary not found.' });
+
+    const [tag] = await Tag.findOrCreate({ where: { name: tag_name } });
+    await diary.addTag(tag);
+    res.status(201).json({ message: 'Tag attached!', tag });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// DELETE /diary/:id/tags/:tagId
+exports.detachTag = async (req, res) => {
+  try {
+    const diary = await DiaryEntry.findOne({
+      where: { id: req.params.id, userId: req.user.id }
+    });
+    if (!diary) return res.status(404).json({ message: 'Diary not found.' });
+
+    const tag = await Tag.findByPk(req.params.tagId);
+    if (!tag) return res.status(404).json({ message: 'Tag not found.' });
+
+    await diary.removeTag(tag);
+    res.json({ message: 'Tag detached!' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
