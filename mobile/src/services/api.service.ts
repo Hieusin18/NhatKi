@@ -1,7 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:3000/api';
-// Khi backend deploy xong đổi URL này là xong
+const API_BASE_URL = 'https://nhatki-production.up.railway.app/api';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
