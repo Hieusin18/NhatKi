@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 const { createServer } = require('http');
 const { SocketHandler } = require('./realtime/socket.handler');
 const mediaRouter = require('./modules/media/media.routes');
+const authRouter = require('./modules/auth/auth.routes');
 const { initCapsuleScheduler } = require('./modules/capsule/capsule.scheduler');
 
 dotenv.config();
@@ -15,6 +16,7 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
+app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/media', mediaRouter);
 
 // Initialize Socket.io Server
