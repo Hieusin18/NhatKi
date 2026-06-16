@@ -136,4 +136,7 @@ router.get('/:id', auth, ctrl.getOne);
  */
 router.patch('/:id/visibility', auth, ctrl.updateVisibility);
 
+router.post('/:id/tags', auth, ctrl.attachTag);
+router.delete('/:id/tags/:tagId', auth, ctrl.detachTag);
+
 module.exports = router;
