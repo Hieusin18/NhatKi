@@ -1,18 +1,27 @@
 import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { router } from 'expo-router';
+import { authApi } from '../../src/services/auth.api';
 
 export default function Register() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleRegister = async () => {
     if (!name || !email || !password) return Alert.alert('Lỗi', 'Vui lòng nhập đầy đủ');
-    // Khi backend xong: gọi API /auth/register
-    Alert.alert('Thành công', 'Đăng ký thành công!', [
-      { text: 'OK', onPress: () => router.replace('/(auth)/login') }
-    ]);
+    setLoading(true);
+    try {
+      await authApi.register(name, email, password);
+      Alert.alert('Thành công', 'Đăng ký thành công!', [
+        { text: 'OK', onPress: () => router.replace('/(auth)/login') }
+      ]);
+    } catch (error: any) {
+      Alert.alert('Lỗi', error?.response?.data?.message || 'Đăng ký thất bại');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -24,8 +33,8 @@ export default function Register() {
         value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
       <TextInput style={styles.input} placeholder="Mật khẩu" placeholderTextColor="#666"
         value={password} onChangeText={setPassword} secureTextEntry />
-      <TouchableOpacity style={styles.button} onPress={handleRegister}>
-        <Text style={styles.buttonText}>Đăng ký</Text>
+      <TouchableOpacity style={styles.button} onPress={handleRegister} disabled={loading}>
+        <Text style={styles.buttonText}>{loading ? 'Đang đăng ký...' : 'Đăng ký'}</Text>
       </TouchableOpacity>
       <TouchableOpacity onPress={() => router.back()}>
         <Text style={styles.link}>Đã có tài khoản? Đăng nhập</Text>
