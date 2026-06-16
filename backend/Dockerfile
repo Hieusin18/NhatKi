@@ -14,7 +14,7 @@ RUN npx prisma generate || true
 FROM node:20-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production PORT=5000
-RUN apk add --no-cache curl \
+RUN apk add --no-cache curl openssl \
  && addgroup -g 1001 -S nodejs \
  && adduser -u 1001 -S setlog -G nodejs
 COPY --from=deps /app/node_modules ./node_modules
