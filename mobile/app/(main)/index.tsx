@@ -1,231 +1,155 @@
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  FlatList,
-} from "react-native";
-import { router } from "expo-router";
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, SafeAreaView } from 'react-native';
+import { router } from 'expo-router';
 
-// Mock data - khi backend xong thì thay bằng API call
 const MOCK_FEED = [
-  {
-    id: "1",
-    user: "Dev 1",
-    avatar: "👨‍💻",
-    caption: "Setup DB xong rồi 🎉",
-    time: "2 phút trước",
-    mode: "group",
-  },
-  {
-    id: "2",
-    user: "Dev 4",
-    avatar: "🎨",
-    caption: "Figma wireframe hoàn thiện!",
-    time: "15 phút trước",
-    mode: "group",
-  },
-  {
-    id: "3",
-    user: "Bạn",
-    avatar: "📱",
-    caption: "Camera đang test...",
-    time: "1 giờ trước",
-    mode: "solo",
-  },
+  { id: '1', user: 'Dev 1', initials: 'D1', color: '#1D9E75', caption: 'Setup DB xong rồi 🎉', time: '2 phút trước', mode: 'group' },
+  { id: '2', user: 'Dev 4', initials: 'D4', color: '#D85A30', caption: 'Figma wireframe hoàn thiện!', time: '15 phút trước', mode: 'group' },
+  { id: '3', user: 'Bạn', initials: 'BN', color: '#378ADD', caption: 'Camera đang test...', time: '1 giờ trước', mode: 'solo' },
 ];
 
 export default function Home() {
   const renderItem = ({ item }: any) => (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
-        <Text style={styles.avatar}>{item.avatar}</Text>
-
-        <View>
+        <View style={[styles.avatar, { backgroundColor: item.color }]}>
+          <Text style={styles.avatarText}>{item.initials}</Text>
+        </View>
+        <View style={styles.cardMeta}>
           <Text style={styles.username}>{item.user}</Text>
           <Text style={styles.time}>{item.time}</Text>
         </View>
-
-        <View
-          style={[
-            styles.modeBadge,
-            item.mode === "group" ? styles.groupBadge : styles.soloBadge,
-          ]}
-        >
-          <Text style={styles.modeTxt}>
-            {item.mode === "group" ? "👥 Nhóm" : "👤 Solo"}
+        <View style={[styles.badge, item.mode === 'group' ? styles.badgeGroup : styles.badgeSolo]}>
+          <Text style={[styles.badgeText, item.mode === 'group' ? styles.badgeTextGroup : styles.badgeTextSolo]}>
+            {item.mode === 'group' ? 'Nhóm' : 'Cá nhân'}
           </Text>
         </View>
       </View>
 
       <View style={styles.imagePlaceholder}>
-        <Text style={styles.imagePlaceholderTxt}>📷 Ảnh mock</Text>
+        <Text style={styles.imagePlaceholderIcon}>📷</Text>
+        <Text style={styles.imagePlaceholderText}>Chưa có ảnh</Text>
       </View>
 
-      <Text style={styles.caption}>{item.caption}</Text>
+      <View style={styles.cardFooter}>
+        <Text style={styles.caption}>{item.caption}</Text>
+      </View>
     </View>
   );
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>NhatKi 📓</Text>
-
-        <View style={styles.headerBtns}>
-          {/* Profile */}
-          <TouchableOpacity
-            style={styles.iconBtn}
-            onPress={() => router.push("/profile")}
-          >
-            <Text style={styles.iconTxt}>👤</Text>
+        <View>
+          <Text style={styles.greeting}>Xin chào 👋</Text>
+          <Text style={styles.title}>NhatKi</Text>
+        </View>
+        <View style={styles.headerActions}>
+          <TouchableOpacity style={styles.iconBtn} onPress={() => router.push('/(main)/capsule')}>
+            <Text style={styles.iconBtnText}>⏳</Text>
           </TouchableOpacity>
-
-          {/* Group Setting */}
-          <TouchableOpacity
-            style={styles.iconBtn}
-            onPress={() => router.push("/group-setting")}
-          >
-            <Text style={styles.iconTxt}>👥</Text>
-          </TouchableOpacity>
-
-          {/* Capsule */}
-          <TouchableOpacity
-            style={styles.iconBtn}
-            onPress={() => router.push("/(main)/capsule")}
-          >
-            <Text style={styles.iconTxt}>⏳</Text>
-          </TouchableOpacity>
-
-          {/* Camera */}
-          <TouchableOpacity
-            style={styles.iconBtn}
-            onPress={() => router.push("/(main)/camera")}
-          >
-            <Text style={styles.iconTxt}>📷</Text>
+          <TouchableOpacity style={styles.iconBtn} onPress={() => router.push('/profile')}>
+            <Text style={styles.iconBtnText}>👤</Text>
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Feed */}
       <FlatList
         data={MOCK_FEED}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
         contentContainerStyle={styles.feed}
         showsVerticalScrollIndicator={false}
+        ListHeaderComponent={
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Dòng thời gian</Text>
+            <TouchableOpacity onPress={() => router.push('/group-setting')}>
+              <Text style={styles.sectionLink}>Nhóm của tôi</Text>
+            </TouchableOpacity>
+          </View>
+        }
       />
-    </View>
+
+      <TouchableOpacity style={styles.fab} onPress={() => router.push('/(main)/camera')}>
+        <Text style={styles.fabText}>📷</Text>
+      </TouchableOpacity>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#0f0f1a",
-  },
+  container: { flex: 1, backgroundColor: '#f5f6fa' },
 
   header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 16,
-    paddingTop: 56,
-    backgroundColor: "#0f0f1a",
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1, borderBottomColor: '#f0f0f0',
   },
-
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#fff",
-  },
-
-  headerBtns: {
-    flexDirection: "row",
-    gap: 8,
-  },
-
+  greeting: { fontSize: 13, color: '#888', marginBottom: 2 },
+  title: { fontSize: 24, fontWeight: '800', color: '#1a1a1a', letterSpacing: -0.5 },
+  headerActions: { flexDirection: 'row', gap: 8 },
   iconBtn: {
-    backgroundColor: "#6C63FF",
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: "center",
-    alignItems: "center",
+    width: 42, height: 42, borderRadius: 21,
+    backgroundColor: '#f5f6fa',
+    borderWidth: 1, borderColor: '#e8e8e8',
+    justifyContent: 'center', alignItems: 'center',
   },
+  iconBtnText: { fontSize: 18 },
 
-  iconTxt: {
-    fontSize: 20,
-  },
+  feed: { padding: 16, gap: 12, paddingBottom: 100 },
 
-  feed: {
-    padding: 16,
-    gap: 16,
+  sectionHeader: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    marginBottom: 12,
   },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#1a1a1a' },
+  sectionLink: { fontSize: 13, color: '#1D9E75', fontWeight: '600' },
 
   card: {
-    backgroundColor: "#1e1e2e",
+    backgroundColor: '#fff',
     borderRadius: 16,
-    overflow: "hidden",
+    overflow: 'hidden',
+    borderWidth: 1, borderColor: '#f0f0f0',
+    shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 8, shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
   },
-
   cardHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 12,
-    gap: 10,
+    flexDirection: 'row', alignItems: 'center',
+    padding: 14, gap: 10,
   },
-
   avatar: {
-    fontSize: 32,
+    width: 40, height: 40, borderRadius: 20,
+    justifyContent: 'center', alignItems: 'center',
   },
+  avatarText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  cardMeta: { flex: 1 },
+  username: { fontSize: 15, fontWeight: '600', color: '#1a1a1a' },
+  time: { fontSize: 12, color: '#aaa', marginTop: 1 },
 
-  username: {
-    color: "#fff",
-    fontWeight: "600",
-    fontSize: 15,
-  },
-
-  time: {
-    color: "#666",
-    fontSize: 12,
-  },
-
-  modeBadge: {
-    marginLeft: "auto",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-
-  groupBadge: {
-    backgroundColor: "rgba(108,99,255,0.2)",
-  },
-
-  soloBadge: {
-    backgroundColor: "rgba(74,222,128,0.2)",
-  },
-
-  modeTxt: {
-    fontSize: 12,
-    color: "#fff",
-  },
+  badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
+  badgeGroup: { backgroundColor: '#e8f7f2' },
+  badgeSolo: { backgroundColor: '#e8f0fb' },
+  badgeText: { fontSize: 12, fontWeight: '600' },
+  badgeTextGroup: { color: '#0F6E56' },
+  badgeTextSolo: { color: '#185FA5' },
 
   imagePlaceholder: {
-    height: 200,
-    backgroundColor: "#2a2a3e",
-    justifyContent: "center",
-    alignItems: "center",
+    height: 180, backgroundColor: '#f5f6fa',
+    justifyContent: 'center', alignItems: 'center', gap: 8,
   },
+  imagePlaceholderIcon: { fontSize: 32 },
+  imagePlaceholderText: { fontSize: 13, color: '#bbb' },
 
-  imagePlaceholderTxt: {
-    color: "#444",
-    fontSize: 16,
-  },
+  cardFooter: { padding: 14, paddingTop: 10 },
+  caption: { fontSize: 14, color: '#333', lineHeight: 20 },
 
-  caption: {
-    color: "#ccc",
-    padding: 12,
-    fontSize: 14,
+  fab: {
+    position: 'absolute', bottom: 28, right: 24,
+    width: 60, height: 60, borderRadius: 30,
+    backgroundColor: '#1D9E75',
+    justifyContent: 'center', alignItems: 'center',
+    shadowColor: '#1D9E75', shadowOpacity: 0.4, shadowRadius: 12, shadowOffset: { width: 0, height: 4 },
+    elevation: 8,
   },
+  fabText: { fontSize: 26 },
 });
