@@ -1,22 +1,39 @@
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { router } from 'expo-router';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router } from "expo-router";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, View } from "react-native";
+
+import OnboardingScreen from "../../src/screens/auth/OnboardingScreen";
+import { useTheme } from "../../src/Theme/ThemeContext";
 
 export default function Onboarding() {
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>NhatKi 📓</Text>
-      <Text style={styles.subtitle}>Your life, organized.{'\n'}Your memories, preserved.</Text>
-      <TouchableOpacity style={styles.button} onPress={() => router.replace('/(auth)/login')}>
-        <Text style={styles.buttonText}>Bắt đầu</Text>
-      </TouchableOpacity>
-    </View>
-  );
-}
+  const { colors } = useTheme();
+  const [checking, setChecking] = useState(true);
 
-const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0f0f1a', padding: 24 },
-  title: { fontSize: 40, fontWeight: 'bold', color: '#fff', marginBottom: 12 },
-  subtitle: { fontSize: 18, color: '#aaa', textAlign: 'center', marginBottom: 48, lineHeight: 28 },
-  button: { backgroundColor: '#6C63FF', paddingVertical: 16, paddingHorizontal: 48, borderRadius: 12 },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-});
+  useEffect(() => {
+    AsyncStorage.getItem("hasSeenOnboarding").then((value) => {
+      if (value === "true") {
+        router.replace("/(auth)/login");
+      } else {
+        setChecking(false);
+      }
+    });
+  }, []);
+
+  if (checking) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: colors.background,
+        }}
+      >
+        <ActivityIndicator color={colors.primary} />
+      </View>
+    );
+  }
+
+  return <OnboardingScreen />;
+}
