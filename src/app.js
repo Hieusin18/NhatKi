@@ -23,6 +23,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.get('/', (req, res) => res.json({ message: '📔 Diary API is running!' }));
 app.use('/auth', require('./routes/auth'));
 app.use('/groups', require('./routes/groups'));
+app.use('/api/groups', require('./routes/groups'));
 app.use('/diary', require('./routes/diary'));
 
 // 404 handler

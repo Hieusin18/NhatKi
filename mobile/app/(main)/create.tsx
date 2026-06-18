@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, TextInput, ScrollView, SafeAreaView, Switch } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, TextInput, ScrollView, SafeAreaView, Switch, Image, Alert } from 'react-native';
 import { router } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
 
 const MOODS = ['😊', '😐', '😢', '🤩', '😡', '😴'];
 
@@ -8,6 +9,43 @@ export default function Create() {
   const [selectedMood, setSelectedMood] = useState(0);
   const [caption, setCaption] = useState('');
   const [isPublic, setIsPublic] = useState(true);
+  const [image, setImage] = useState<string | null>(null);
+
+  const openCamera = async () => {
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Quyền truy cập', 'Cần quyền truy cập camera để chụp ảnh.');
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ['images'],
+        quality: 0.8,
+      });
+
+      if (!result.canceled) {
+        setImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.log("=== LỖI CAMERA THỰC TẾ ===", error);
+    }
+  };
+
+  const pickImage = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        quality: 0.8,
+      });
+
+      if (!result.canceled) {
+        setImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.log("=== LỖI THƯ VIỆN THỰC TẾ ===", error);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -23,14 +61,20 @@ export default function Create() {
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.photoBox}>
-          <Text style={styles.photoIcon}>📷</Text>
-          <Text style={styles.photoLabel}>Thêm ảnh của bạn</Text>
+          {image ? (
+            <Image source={{ uri: image }} style={{ width: '90%', height: 180, borderRadius: 12, marginBottom: 10 }} />
+          ) : (
+            <>
+              <Text style={styles.photoIcon}>📷</Text>
+              <Text style={styles.photoLabel}>Thêm ảnh của bạn</Text>
+            </>
+          )}
           <View style={styles.photoActions}>
-            <TouchableOpacity style={styles.photoBtn}>
+            <TouchableOpacity style={styles.photoBtn} onPress={openCamera}>
               <Text style={styles.photoBtnIcon}>📷</Text>
               <Text style={styles.photoBtnText}>Camera</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.photoBtn}>
+            <TouchableOpacity style={styles.photoBtn} onPress={pickImage}>
               <Text style={styles.photoBtnIcon}>🖼️</Text>
               <Text style={styles.photoBtnText}>Thư viện</Text>
             </TouchableOpacity>

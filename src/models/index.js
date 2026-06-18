@@ -1,10 +1,10 @@
-const sequelize              = require('../config/database');
-const User                   = require('./User');
+const sequelize = require('../config/database');
+const User = require('./User');
 const { Group, GroupMember } = require('./Group');
-const Media                  = require('./Media');
-const Capsule                = require('./Capsule');
-const DiaryEntry             = require('./DiaryEntry');
-const Tag                    = require('./Tag');
+const Media = require('./Media');
+const Capsule = require('./Capsule');
+const DiaryEntry = require('./DiaryEntry');
+const Tag = require('./Tag');
 
 // User ↔ Group
 User.belongsToMany(Group, { through: GroupMember, foreignKey: 'userId', as: 'groups' });
