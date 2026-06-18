@@ -3,30 +3,31 @@ const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();
 
-// Mock Firebase Cloud Messaging Service
-class FcmNotificationService {
-  /**
-   * Mock FCM token retrieval for users
-   */
-  static async getUserFcmTokens(userIds) {
-    const tokenMap = {};
-    for (const userId of userIds) {
-      tokenMap[userId] = [`fcm_token_mock_for_user_${userId}`];
+class NotificationLogService {
+  static async createCapsuleUnlockedLogs(tx, userIds, capsule, title, body) {
+    if (userIds.length === 0) {
+      return { count: 0 };
     }
-    return tokenMap;
-  }
 
-  /**
-   * Mock sending push notification via FCM
-   */
-  static async sendPush(tokens, title, body) {
-    console.log(`[FCM Notification] Sending notification to ${tokens.length} token(s):`);
-    console.log(`  -> Title: "${title}"`);
-    console.log(`  -> Body: "${body}"`);
-    for (const token of tokens) {
-      console.log(`  -> [SUCCESS] Push sent to token: ${token}`);
-    }
-    return true;
+    const sentAt = new Date();
+
+    return tx.notification.createMany({
+      data: userIds.map((userId) => ({
+        userId,
+        capsuleId: capsule.id,
+        type: 'capsule_unlocked',
+        title,
+        body,
+        channel: 'push',
+        status: 'sent',
+        sentAt,
+        metadata: JSON.stringify({
+          capsule_id: capsule.id,
+          capsule_title: capsule.title,
+          creator_id: capsule.userId,
+        }),
+      })),
+    });
   }
 }
 
@@ -66,74 +67,81 @@ async function runCapsuleCheckingJob() {
         });
         const creatorName = creator ? creator.username : 'Unknown User';
 
-        // 2. Identify all recipient User IDs
-        const recipientUserIds = new Set();
-        
-        // Add creator
-        recipientUserIds.add(capsule.userId);
+        const notificationTitle = 'Time Capsule Mở Khóa!';
+        const notificationBody = `Time Capsule "${capsule.title}" từ ${creatorName} đã được mở khóa!`;
 
-        // Add receiver if specified
-        if (capsule.receiverId) {
-          recipientUserIds.add(capsule.receiverId);
-        }
-
-        // Fetch groups the creator belongs to
-        const creatorGroups = await prisma.groupMember.findMany({
-          where: { userId: capsule.userId },
-        });
-
-        const groupIds = creatorGroups.map(g => g.groupId);
-
-        if (groupIds.length > 0) {
-          // Fetch all members in those groups
-          const relatedGroupMembers = await prisma.groupMember.findMany({
+        await prisma.$transaction(async (tx) => {
+          // Claim the capsule atomically.
+          const updateCount = await tx.capsule.updateMany({
             where: {
-              groupId: {
-                in: groupIds,
-              },
+              id: capsule.id,
+              isNotified: false,
+            },
+            data: {
+              isNotified: true,
+              isOpened: true,
+              status: 'unlocked',
             },
           });
 
-          for (const member of relatedGroupMembers) {
-            recipientUserIds.add(member.userId);
+          if (updateCount.count === 0) {
+            throw new Error('ALREADY_PROCESSED');
           }
-        }
 
-        const userIdsToNotify = Array.from(recipientUserIds);
-        console.log(`[Time Capsule Scheduler] Identified ${userIdsToNotify.length} users to notify for Capsule ID ${capsule.id}.`);
-
-        // 3. Push Notification: Get tokens and send push notifications
-        const tokenMap = await FcmNotificationService.getUserFcmTokens(userIdsToNotify);
-        const allTokens = [];
-        
-        for (const userId of userIdsToNotify) {
-          if (tokenMap[userId]) {
-            allTokens.push(...tokenMap[userId]);
-          }
-        }
-
-        if (allTokens.length > 0) {
-          const notificationTitle = 'Time Capsule Mở Khóa!';
-          const notificationBody = `Time Capsule "${capsule.title}" từ ${creatorName} đã được mở khóa!`;
+          // Identify all recipient User IDs
+          const recipientUserIds = new Set();
           
-          await FcmNotificationService.sendPush(allTokens, notificationTitle, notificationBody);
-        } else {
-          console.warn(`[Time Capsule Scheduler] No FCM tokens found for recipients of Capsule ID: ${capsule.id}`);
-        }
+          // Add creator
+          recipientUserIds.add(capsule.userId);
 
-        // 4. Update status: update capsule state to prevent duplication
-        await prisma.capsule.update({
-          where: { id: capsule.id },
-          data: {
-            isNotified: true,
-            isOpened: true,
-            status: 'unlocked',
-          },
+          // Add receiver if specified
+          if (capsule.receiverId) {
+            recipientUserIds.add(capsule.receiverId);
+          }
+
+          // Fetch groups the creator belongs to
+          const creatorGroups = await tx.groupMember.findMany({
+            where: { userId: capsule.userId },
+          });
+
+          const groupIds = creatorGroups.map(g => g.groupId);
+
+          if (groupIds.length > 0) {
+            // Fetch all members in those groups
+            const relatedGroupMembers = await tx.groupMember.findMany({
+              where: {
+                groupId: {
+                  in: groupIds,
+                },
+              },
+            });
+
+            for (const member of relatedGroupMembers) {
+              recipientUserIds.add(member.userId);
+            }
+          }
+
+          const userIdsToNotify = Array.from(recipientUserIds);
+          console.log(`[Time Capsule Scheduler] Identified ${userIdsToNotify.length} users to notify for Capsule ID ${capsule.id}.`);
+
+          const result = await NotificationLogService.createCapsuleUnlockedLogs(
+            tx,
+            userIdsToNotify,
+            capsule,
+            notificationTitle,
+            notificationBody
+          );
+
+          console.log(`[Time Capsule Scheduler] Stored ${result.count} notification log(s) for Capsule ID: ${capsule.id}.`);
         });
 
         console.log(`[Time Capsule Scheduler] [SUCCESS] Capsule ID: ${capsule.id} is notified and unlocked successfully.`);
       } catch (capsuleError) {
-        console.error(`[Time Capsule Scheduler] [ERROR] Failed to process Capsule ID: ${capsule.id}:`, capsuleError);
+        if (capsuleError.message === 'ALREADY_PROCESSED') {
+          console.log(`[Time Capsule Scheduler] Capsule ID: ${capsule.id} was already processed/claimed by another job instance. Skipping.`);
+        } else {
+          console.error(`[Time Capsule Scheduler] [ERROR] Failed to process Capsule ID: ${capsule.id}:`, capsuleError);
+        }
       }
     }
   } catch (error) {

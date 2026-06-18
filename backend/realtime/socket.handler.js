@@ -2,6 +2,9 @@ const { Server } = require("socket.io");
 const jwt = require("jsonwebtoken");
 const { EVENTS } = require("./events");
 const { SocketService } = require("../services/socket.service");
+const { PrismaClient } = require("@prisma/client");
+
+const prisma = new PrismaClient();
 
 class SocketHandler {
   static instance = null;
@@ -40,19 +43,26 @@ class SocketHandler {
         }
 
         const tokenString = token.startsWith('Bearer ') ? token.slice(7) : token;
-        const secret = process.env.JWT_SECRET || 'supersecretkey';
+        const secret = process.env.JWT_SECRET || 'nhatki_secret';
 
         const decoded = jwt.verify(tokenString, secret);
 
-        if (!decoded.user_id || !decoded.group_id) {
-          console.error('[SocketHandler] Auth error: Token is missing user_id or group_id.');
+        if (!decoded.userId) {
+          console.error('[SocketHandler] Auth error: Token is missing userId.');
           return next(new Error('Authentication error: Invalid token payload.'));
         }
 
+        const groupId =
+          socket.handshake.auth?.groupId ||
+          socket.handshake.auth?.group_id ||
+          socket.handshake.query?.groupId ||
+          socket.handshake.query?.group_id ||
+          null;
+
         socket.data = {
-          userId: decoded.user_id,
+          userId: decoded.userId,
           username: decoded.username || '',
-          groupId: decoded.group_id,
+          groupId,
         };
 
         next();
@@ -92,19 +102,142 @@ class SocketHandler {
 }
 
 const registerSocketHandlers = (io, socket) => {
-  const { userId, groupId } = socket.data;
-  socket.join(groupId);
-  const isFirstDevice = SocketService.addUserConnection(userId, socket.id);
-  if (isFirstDevice) socket.to(groupId).emit(EVENTS.PRESENCE, { userId, status: "online" });
-  socket.emit(EVENTS.ONLINE_LIST, SocketService.getOnlineUsers());
-  socket.on(EVENTS.SHARE_CAPTURE, (data) => {
-    const payload = { groupId, imageId: data.imageId, senderId: userId, imageUrl: data.imageUrl, createdAt: new Date().toISOString() };
-    io.to(groupId).emit(EVENTS.NEW_CAPTURE, payload);
+  const { userId } = socket.data;
+
+  if (socket.data.groupId) {
+    prisma.groupMember.findUnique({
+      where: {
+        userId_groupId: {
+          userId,
+          groupId: String(socket.data.groupId),
+        },
+      },
+    }).then((membership) => {
+      if (membership) {
+        joinGroupRoom(io, socket, socket.data.groupId);
+      } else {
+        console.warn(`[SocketHandler] User ${userId} unauthorized for group ${socket.data.groupId} at connection.`);
+        socket.emit("join-room:error", { message: "Bạn không có quyền tham gia phòng này." });
+      }
+    }).catch((err) => {
+      console.error(`[SocketHandler] Error verifying connection groupId: ${err.message}`);
+    });
+  }
+
+  socket.on("join-room", async (payload) => {
+    const groupId = typeof payload === "string" ? payload : payload?.groupId || payload?.group_id;
+
+    if (!groupId) {
+      socket.emit("join-room:error", { message: "groupId is required." });
+      return;
+    }
+
+    try {
+      const membership = await prisma.groupMember.findUnique({
+        where: {
+          userId_groupId: {
+            userId,
+            groupId: String(groupId),
+          },
+        },
+      });
+
+      if (!membership) {
+        socket.emit("join-room:error", { message: "Bạn không có quyền tham gia phòng này." });
+        return;
+      }
+
+      joinGroupRoom(io, socket, groupId);
+    } catch (err) {
+      console.error(`Error checking membership in join-room: ${err.message}`);
+      socket.emit("join-room:error", { message: "Lỗi hệ thống khi kiểm tra quyền truy cập." });
+    }
+  });
+
+  socket.on(EVENTS.SHARE_CAPTURE, async (data) => {
+    const groupId = data?.groupId || data?.group_id || socket.data.groupId;
+
+    if (!groupId) {
+      socket.emit("share-capture:error", { message: "Join a group before sharing capture." });
+      return;
+    }
+
+    try {
+      const membership = await prisma.groupMember.findUnique({
+        where: {
+          userId_groupId: {
+            userId,
+            groupId: String(groupId),
+          },
+        },
+      });
+
+      if (!membership) {
+        socket.emit("share-capture:error", { message: "Bạn không có quyền chia sẻ ảnh trong nhóm này." });
+        return;
+      }
+
+      const payload = { groupId, imageId: data?.imageId, senderId: userId, imageUrl: data?.imageUrl, createdAt: new Date().toISOString() };
+      io.to(groupId).emit(EVENTS.NEW_CAPTURE, payload);
+    } catch (err) {
+      console.error(`Error checking membership in share-capture: ${err.message}`);
+      socket.emit("share-capture:error", { message: "Lỗi hệ thống khi kiểm tra quyền truy cập." });
+    }
   });
   socket.on(EVENTS.DISCONNECT, () => {
-    const isCompletelyOffline = SocketService.removeUserConnection(userId, socket.id);
-    if (isCompletelyOffline) io.to(groupId).emit(EVENTS.PRESENCE, { userId, status: "offline" });
+    const groupId = socket.data.groupId;
+    if (!groupId) {
+      return;
+    }
+
+    const isCompletelyOffline = SocketService.removeUserConnection(groupId, userId, socket.id);
+    if (isCompletelyOffline) {
+      io.to(groupId).emit(EVENTS.PRESENCE, { userId, status: "offline" });
+      io.to(groupId).emit(EVENTS.ONLINE_LIST, SocketService.getOnlineUsers(groupId));
+    }
   });
+};
+
+const joinGroupRoom = (io, socket, groupId) => {
+  const normalizedGroupId = String(groupId);
+
+  if (socket.data.groupId === normalizedGroupId && socket.rooms.has(normalizedGroupId)) {
+    return;
+  }
+
+  const previousGroupId = socket.data.groupId;
+  if (previousGroupId && previousGroupId !== normalizedGroupId) {
+    socket.leave(previousGroupId);
+
+    const isOfflineInPreviousGroup = SocketService.removeUserConnection(
+      previousGroupId,
+      socket.data.userId,
+      socket.id
+    );
+
+    if (isOfflineInPreviousGroup) {
+      io.to(previousGroupId).emit(EVENTS.PRESENCE, {
+        userId: socket.data.userId,
+        status: "offline"
+      });
+    }
+
+    io.to(previousGroupId).emit(EVENTS.ONLINE_LIST, SocketService.getOnlineUsers(previousGroupId));
+  }
+
+  socket.data.groupId = normalizedGroupId;
+  socket.join(normalizedGroupId);
+
+  const isFirstDevice = SocketService.addUserConnection(normalizedGroupId, socket.data.userId, socket.id);
+  if (isFirstDevice) {
+    socket.to(normalizedGroupId).emit(EVENTS.PRESENCE, {
+      userId: socket.data.userId,
+      status: "online"
+    });
+  }
+
+  io.to(normalizedGroupId).emit(EVENTS.ONLINE_LIST, SocketService.getOnlineUsers(normalizedGroupId));
+  socket.emit("join-room:success", { groupId: normalizedGroupId });
 };
 
 module.exports = {
