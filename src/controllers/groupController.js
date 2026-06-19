@@ -1,15 +1,13 @@
+const { Op }                        = require('sequelize');
+const { Group, GroupMember, User }  = require('../models/index');
+
+// Prisma is kept ONLY for groupActivity + media search (no Sequelize model yet).
+// Migration to Sequelize is tracked in docs/adr/001-dual-orm.md — planned for v1.1.0.
 const path = require('path');
 const { PrismaClient } = require(path.join(__dirname, '../../backend/node_modules/@prisma/client'));
-
-const dbUrl = process.env.DATABASE_URL || 
-  `mysql://${process.env.DB_USER || 'root'}:${process.env.DB_PASS || ''}@${process.env.DB_HOST || '127.0.0.1'}:${process.env.DB_PORT || '3306'}/${process.env.DB_NAME || 'diary_db'}`;
-
 const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: dbUrl,
-    },
-  },
+  datasources: { db: { url: process.env.DATABASE_URL ||
+    `mysql://${process.env.DB_USER||'root'}:${process.env.DB_PASS||''}@${process.env.DB_HOST||'127.0.0.1'}:${process.env.DB_PORT||'3306'}/${process.env.DB_NAME||'diary_db'}` } }
 });
 
 /** Generate a random 6-character uppercase invite code. @returns {string} */
@@ -26,22 +24,8 @@ exports.create = async (req, res) => {
     const { name, description } = req.body;
     if (!name) return res.status(400).json({ message: 'Group name is required.' });
 
-    const group = await prisma.group.create({
-      data: {
-        name,
-        description,
-        ownerId: req.user.id,
-        inviteCode: genCode(),
-      }
-    });
-
-    await prisma.groupMember.create({
-      data: {
-        userId: req.user.id,
-        groupId: group.id,
-        role: 'owner'
-      }
-    });
+    const group = await Group.create({ name, description, ownerId: req.user.id, inviteCode: genCode() });
+    await GroupMember.create({ userId: req.user.id, groupId: group.id, role: 'owner' });
 
     res.status(201).json({ message: 'Group created!', data: group });
   } catch (err) {
@@ -49,351 +33,181 @@ exports.create = async (req, res) => {
   }
 };
 
-// POST /groups/join
+/**
+ * POST /groups/join
+ * Join a group using an invite code.
+ * @param {import('express').Request}  req - body: { inviteCode }
+ * @param {import('express').Response} res - 200 { data: Group } | 400 | 404 | 409 | 500
+ */
 exports.join = async (req, res) => {
   try {
     const { inviteCode } = req.body;
     if (!inviteCode) return res.status(400).json({ message: 'Missing inviteCode.' });
 
-    const group = await prisma.group.findUnique({
-      where: { inviteCode }
-    });
+    const group = await Group.findOne({ where: { inviteCode } });
     if (!group) return res.status(404).json({ message: 'Invalid invite code.' });
 
-    const existed = await prisma.groupMember.findFirst({
-      where: { userId: req.user.id, groupId: group.id }
-    });
+    const existed = await GroupMember.findOne({ where: { userId: req.user.id, groupId: group.id } });
     if (existed) return res.status(409).json({ message: 'Already a member.' });
 
-    await prisma.groupMember.create({
-      data: {
-        userId: req.user.id,
-        groupId: group.id,
-        role: 'member'
-      }
-    });
-
+    await GroupMember.create({ userId: req.user.id, groupId: group.id, role: 'member' });
     res.json({ message: `Joined group "${group.name}"!`, data: group });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-// GET /groups
+/**
+ * GET /groups
+ * Return all groups the authenticated user belongs to.
+ * @param {import('express').Request}  req
+ * @param {import('express').Response} res - 200 { data: Group[] } | 500
+ */
 exports.getMyGroups = async (req, res) => {
   try {
-    const groupMembers = await prisma.groupMember.findMany({
-      where: { userId: req.user.id },
-      include: {
-        group: {
-          include: {
-            groupMembers: {
-              include: {
-                user: {
-                  select: { id: true, username: true, avatar: true }
-                }
-              }
-            }
-          }
-        }
-      }
+    const user = await User.findByPk(req.user.id, {
+      include: [{
+        model: Group,
+        as: 'groups',
+        include: [{ model: User, as: 'members', attributes: ['id', 'username', 'avatar'] }],
+      }],
     });
-
-    const groups = groupMembers.map(gm => {
-      const g = gm.group;
-      return {
-        id: g.id,
-        name: g.name,
-        description: g.description,
-        ownerId: g.ownerId,
-        inviteCode: g.inviteCode,
-        isActive: g.isActive,
-        createdAt: g.createdAt,
-        updatedAt: g.updatedAt,
-        members: g.groupMembers.map(m => ({
-          id: m.user.id,
-          username: m.user.username,
-          avatar: m.user.avatar,
-          GroupMember: {
-            role: m.role,
-            joinedAt: m.joinedAt
-          }
-        }))
-      };
-    });
-
-    res.json({ data: groups });
+    res.json({ data: user.groups });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-// GET /groups/:id
+/**
+ * GET /groups/:id
+ * Return a single group with its member list.
+ * @param {import('express').Request}  req - params: { id }
+ * @param {import('express').Response} res - 200 { data: Group } | 404 | 500
+ */
 exports.getOne = async (req, res) => {
   try {
-    const group = await prisma.group.findUnique({
-      where: { id: req.params.id },
-      include: {
-        groupMembers: {
-          include: {
-            user: {
-              select: { id: true, username: true, avatar: true }
-            }
-          }
-        }
-      }
+    const group = await Group.findByPk(req.params.id, {
+      include: [{ model: User, as: 'members', attributes: ['id', 'username', 'avatar'] }],
     });
     if (!group) return res.status(404).json({ message: 'Group not found.' });
-
-    const data = {
-      id: group.id,
-      name: group.name,
-      description: group.description,
-      ownerId: group.ownerId,
-      inviteCode: group.inviteCode,
-      isActive: group.isActive,
-      createdAt: group.createdAt,
-      updatedAt: group.updatedAt,
-      members: group.groupMembers.map(m => ({
-        id: m.user.id,
-        username: m.user.username,
-        avatar: m.user.avatar,
-        GroupMember: {
-          role: m.role,
-          joinedAt: m.joinedAt
-        }
-      }))
-    };
-
-    res.json({ data });
+    res.json({ data: group });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-// POST /groups/:id/regenerate-code
+/**
+ * POST /groups/:id/regenerate-code
+ * Generate a new invite code for a group (owner only).
+ * @param {import('express').Request}  req - params: { id }
+ * @param {import('express').Response} res - 200 { inviteCode } | 404 | 500
+ */
 exports.regenerateCode = async (req, res) => {
   try {
-    const group = await prisma.group.findFirst({
-      where: { id: req.params.id, ownerId: req.user.id }
-    });
+    const group = await Group.findOne({ where: { id: req.params.id, ownerId: req.user.id } });
     if (!group) return res.status(404).json({ message: 'Group not found or not owner.' });
-
-    const updatedGroup = await prisma.group.update({
-      where: { id: req.params.id },
-      data: { inviteCode: genCode() }
-    });
-
-    res.json({ message: 'New invite code generated!', inviteCode: updatedGroup.inviteCode });
+    await group.update({ inviteCode: genCode() });
+    res.json({ message: 'New invite code generated!', inviteCode: group.inviteCode });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-// GET /api/groups/:groupId/history
+// ─── Below: Prisma retained — groupActivity & media models not yet in Sequelize ───
+// Migration tracked: docs/adr/001-dual-orm.md | Target: v1.1.0
+
+/**
+ * GET /api/groups/:groupId/history
+ * Return paginated activity log for a group.
+ * @param {import('express').Request}  req - params: { groupId }, query: { page?, limit?, activityType? }
+ * @param {import('express').Response} res - 200 { data, meta } | 403 | 500
+ */
 exports.getGroupHistory = async (req, res) => {
   try {
     const { groupId } = req.params;
     const userId = req.user.id;
+    const isMember = await prisma.groupMember.findFirst({ where: { userId, groupId } });
+    if (!isMember) return res.status(403).json({ message: 'Forbidden. You are not a member of this group.' });
 
-    // Check membership
-    const isMember = await prisma.groupMember.findFirst({
-      where: { userId, groupId }
-    });
-    if (!isMember) {
-      return res.status(403).json({ message: 'Forbidden. You are not a member of this group.' });
-    }
-
-    // Pagination parameters
-    const page = Math.max(1, parseInt(req.query.page) || 1);
-    const limit = Math.min(100, parseInt(req.query.limit) || 10);
+    const page   = Math.max(1, parseInt(req.query.page)  || 1);
+    const limit  = Math.min(100, parseInt(req.query.limit) || 10);
     const offset = (page - 1) * limit;
+    const where  = { groupId };
+    if (req.query.activityType) where.activityType = req.query.activityType;
 
-    // Build where condition
-    const where = { groupId };
-    if (req.query.activityType) {
-      where.activityType = req.query.activityType;
-    }
+    const total      = await prisma.groupActivity.count({ where });
+    const activities = await prisma.groupActivity.findMany({ where, orderBy: { createdAt: 'desc' }, skip: offset, take: limit });
 
-    const total = await prisma.groupActivity.count({ where });
-    const activities = await prisma.groupActivity.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      skip: offset,
-      take: limit,
-    });
-
-    // Fetch user details manually for history mapping
-    const uploaderIds = Array.from(new Set(activities.map(a => a.userId)));
-    const users = await prisma.user.findMany({
-      where: { id: { in: uploaderIds } },
-      select: { id: true, username: true, avatar: true }
-    });
-    const usersMap = {};
-    users.forEach(u => {
-      usersMap[u.id] = u;
-    });
-
-    const data = activities.map(a => ({
-      id: a.id,
-      groupId: a.groupId,
-      userId: a.userId,
-      activityType: a.activityType,
-      details: a.details,
-      createdAt: a.createdAt,
-      user: usersMap[a.userId] || null
-    }));
+    const uploaderIds = [...new Set(activities.map(a => a.userId))];
+    const users       = await prisma.user.findMany({ where: { id: { in: uploaderIds } }, select: { id: true, username: true, avatar: true } });
+    const usersMap    = Object.fromEntries(users.map(u => [u.id, u]));
 
     return res.json({
-      data,
-      meta: {
-        total,
-        page,
-        limit,
-        total_pages: Math.ceil(total / limit),
-        has_next: page < Math.ceil(total / limit),
-        has_prev: page > 1
-      }
+      data: activities.map(a => ({ ...a, user: usersMap[a.userId] || null })),
+      meta: { total, page, limit, total_pages: Math.ceil(total / limit), has_next: page < Math.ceil(total / limit), has_prev: page > 1 },
     });
   } catch (err) {
     return res.status(500).json({ message: err.message });
   }
 };
 
-// GET /api/groups/:groupId/media/search
+/**
+ * GET /api/groups/:groupId/media/search
+ * Search media files within a group with optional filters.
+ * @param {import('express').Request}  req - params: { groupId }, query: { keyword?, userId?, fromDate?, toDate?, location?, page?, limit? }
+ * @param {import('express').Response} res - 200 { data, meta } | 403 | 500
+ */
 exports.searchGroupMedia = async (req, res) => {
   try {
     const { groupId } = req.params;
     const userId = req.user.id;
+    const isMember = await prisma.groupMember.findFirst({ where: { userId, groupId } });
+    if (!isMember) return res.status(403).json({ message: 'Forbidden. You are not a member of this group.' });
 
-    // Check membership
-    const isMember = await prisma.groupMember.findFirst({
-      where: { userId, groupId }
-    });
-    if (!isMember) {
-      return res.status(403).json({ message: 'Forbidden. You are not a member of this group.' });
-    }
-
-    // Get all group members
-    const groupMembers = await prisma.groupMember.findMany({
-      where: { groupId }
-    });
-    const memberIds = groupMembers.map(m => m.userId);
-
-    // Filters
+    const groupMembers = await prisma.groupMember.findMany({ where: { groupId } });
+    const memberIds    = groupMembers.map(m => m.userId);
     const { keyword, userId: filterUserId, fromDate, toDate, location } = req.query;
 
-    const capsuleWhere = {
-      userId: { in: memberIds },
-      status: 'unlocked'
-    };
+    const capsuleWhere = { userId: { in: memberIds }, status: 'unlocked' };
+    if (location) capsuleWhere.OR = [{ title: { contains: location } }, { content: { contains: location } }];
 
-    if (location) {
-      capsuleWhere.OR = [
-        { title: { contains: location } },
-        { content: { contains: location } }
-      ];
-    }
+    const capsules    = await prisma.capsule.findMany({ where: capsuleWhere, include: { creator: { select: { id: true, username: true, avatar: true } } } });
+    const capsuleIds  = capsules.map(c => c.id);
+    const capsulesMap = Object.fromEntries(capsules.map(c => [c.id, c]));
 
-    const capsules = await prisma.capsule.findMany({
-      where: capsuleWhere,
-      include: {
-        creator: { select: { id: true, username: true, avatar: true } }
-      }
-    });
-
-    const capsuleIds = capsules.map(c => c.id);
-    const capsulesMap = {};
-    capsules.forEach(c => {
-      capsulesMap[c.id] = c;
-    });
-
-    // Get media files
-    const mediaWhere = {
-      diaryId: { in: capsuleIds }
-    };
-
-    if (filterUserId) {
-      mediaWhere.userId = filterUserId;
-    } else {
-      mediaWhere.userId = { in: memberIds };
-    }
-
+    const mediaWhere  = { diaryId: { in: capsuleIds } };
+    mediaWhere.userId = filterUserId || { in: memberIds };
     if (fromDate || toDate) {
       mediaWhere.createdAt = {};
       if (fromDate) mediaWhere.createdAt.gte = new Date(fromDate);
-      if (toDate) mediaWhere.createdAt.lte = new Date(toDate);
+      if (toDate)   mediaWhere.createdAt.lte = new Date(toDate);
     }
 
-    const mediaFiles = await prisma.media.findMany({
-      where: mediaWhere,
-      orderBy: { createdAt: 'desc' }
+    let mediaFiles = await prisma.media.findMany({ where: mediaWhere, orderBy: { createdAt: 'desc' } });
+    const uploaderIds  = [...new Set(mediaFiles.map(m => m.userId))];
+    const uploaders    = await prisma.user.findMany({ where: { id: { in: uploaderIds } }, select: { id: true, username: true, avatar: true } });
+    const uploadersMap = Object.fromEntries(uploaders.map(u => [u.id, u]));
+
+    let result = mediaFiles.map(m => {
+      const c = capsulesMap[m.diaryId] || null;
+      return { ...m, user: uploadersMap[m.userId] || null, capsule: c ? { id: c.id, title: c.title, content: c.content, open_at: c.open_at, creator: c.creator } : null };
     });
 
-    // Populate uploader details
-    const uploaderIds = Array.from(new Set(mediaFiles.map(m => m.userId)));
-    const uploaders = await prisma.user.findMany({
-      where: { id: { in: uploaderIds } },
-      select: { id: true, username: true, avatar: true }
-    });
-    const uploadersMap = {};
-    uploaders.forEach(u => {
-      uploadersMap[u.id] = u;
-    });
-
-    // Format & map results
-    let filteredMedia = mediaFiles.map(m => {
-      const parentCapsule = capsulesMap[m.diaryId] || null;
-      return {
-        id: m.id,
-        userId: m.userId,
-        diaryId: m.diaryId,
-        url: m.url,
-        type: m.type,
-        size: m.size,
-        filename: m.filename,
-        createdAt: m.createdAt,
-        updatedAt: m.updatedAt,
-        deletedAt: m.deletedAt,
-        user: uploadersMap[m.userId] || null,
-        capsule: parentCapsule ? {
-          id: parentCapsule.id,
-          title: parentCapsule.title,
-          content: parentCapsule.content,
-          open_at: parentCapsule.open_at,
-          creator: parentCapsule.creator
-        } : null
-      };
-    });
-
-    // Apply keyword search
     if (keyword) {
       const kw = keyword.toLowerCase();
-      filteredMedia = filteredMedia.filter(m => {
-        const inFilename = m.filename ? m.filename.toLowerCase().includes(kw) : false;
-        const inCapsuleTitle = m.capsule ? m.capsule.title.toLowerCase().includes(kw) : false;
-        const inCapsuleContent = m.capsule && m.capsule.content ? m.capsule.content.toLowerCase().includes(kw) : false;
-        return inFilename || inCapsuleTitle || inCapsuleContent;
-      });
+      result = result.filter(m =>
+        (m.filename?.toLowerCase().includes(kw)) ||
+        (m.capsule?.title?.toLowerCase().includes(kw)) ||
+        (m.capsule?.content?.toLowerCase().includes(kw))
+      );
     }
 
-    // Pagination
-    const page = Math.max(1, parseInt(req.query.page) || 1);
-    const limit = Math.min(100, parseInt(req.query.limit) || 10);
-    const offset = (page - 1) * limit;
-    const total = filteredMedia.length;
-    const paginatedMedia = filteredMedia.slice(offset, offset + limit);
-
+    const page   = Math.max(1, parseInt(req.query.page)  || 1);
+    const limit  = Math.min(100, parseInt(req.query.limit) || 10);
+    const total  = result.length;
     return res.json({
-      data: paginatedMedia,
-      meta: {
-        total,
-        page,
-        limit,
-        total_pages: Math.ceil(total / limit),
-        has_next: page < Math.ceil(total / limit),
-        has_prev: page > 1
-      }
+      data: result.slice((page - 1) * limit, page * limit),
+      meta: { total, page, limit, total_pages: Math.ceil(total / limit), has_next: page < Math.ceil(total / limit), has_prev: page > 1 },
     });
   } catch (err) {
     return res.status(500).json({ message: err.message });
