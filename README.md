@@ -10,7 +10,7 @@
 
 **Setlog** là ứng dụng nhật ký cá nhân kết hợp quản lý ký ức và theo dõi cảm xúc. Người dùng có thể ghi lại nhật ký hằng ngày, đính kèm media, theo dõi mood và tạo **Time Capsule** — nơi lưu ký ức để mở trong tương lai.
 
-Tài liệu đặc tả đầy đủ: [SRS.md](./SRS.md) | Thiết kế Figma: [Xem prototype](https://www.figma.com/make/hv8zZ7b3CEzy6ZDuWe36rN/Design-mobile-group-diary-UI?t=5STs7MFqWbn4Bh88-20&fullscreen=1&preview-route=%2Ftimeline)
+Tài liệu: [SRS.md](./SRS.md) · [Personas & User Stories](./docs/personas.md) · [Changelog](./CHANGELOG.md) · Figma: [Xem prototype](https://www.figma.com/make/hv8zZ7b3CEzy6ZDuWe36rN/Design-mobile-group-diary-UI?t=5STs7MFqWbn4Bh88-20&fullscreen=1&preview-route=%2Ftimeline)
 
 ---
 
@@ -196,12 +196,10 @@ Xem [`CHANGELOG.md`](./CHANGELOG.md) để theo dõi lịch sử các phiên b�
 
 ## Nhóm phát triển (Contributors)
 
-| Vai trò | Thành viên |
-|:--------|:-----------|
-| Dev 1 — Backend Lead | [Hieusin18](https://github.com/Hieusin18) |
-| Dev 2 — Backend | [hoangvu-ai] |
-| Dev 3 — Mobile | [caohuongquynh] |
-| Dev 4 — Mobile UI | [thanhnhe00] |
-| Dev 5 — DevOps | [ngocanh-dev2209] |
-
-
+| Vai trò | Thành viên | Đóng góp chính |
+|:--------|:-----------|:---------------|
+| Dev 1 — Backend Lead | [Hieusin18](https://github.com/Hieusin18) | Auth API, CI/CD pipeline, production deploy, monitoring |
+| Dev 2 — Backend | [hoangvu-ai](https://github.com/hoangvu-ai) | Swagger docs, unit tests (auth/diary/group), feed API |
+| Dev 3 — Mobile | [caohuongquynh](https://github.com/caohuongquynh) | Mobile features, Group Check-in, ProfileScreen |
+| Dev 4 — Mobile UI | [thanhnhe00](https://github.com/thanhnhe00) | UI redesign Minimal Light, Capsule Tab, mobile fixes |
+| Dev 5 — DevOps | [ngocanh-dev2209](https://github.com/ngocanh-dev2209) | Docker, Nginx, Prometheus, Grafana, Alertmanager |

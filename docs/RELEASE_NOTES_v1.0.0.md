@@ -118,13 +118,13 @@ Xem đầy đủ tại [`deploy/DEPLOYMENT.md`](./deploy/DEPLOYMENT.md).
 
 ## Contributors
 
-| Thành viên | Vai trò |
-|:-----------|:--------|
-| [Hieusin18](https://github.com/Hieusin18) | Dev 1 — Backend Lead |
-| [cần bổ sung] | Dev 2 — Backend |
-| [cần bổ sung] | Dev 3 — Mobile |
-| [cần bổ sung] | Dev 4 — Mobile UI |
-| [cần bổ sung] | Dev 5 — DevOps |
+| Thành viên | Vai trò | Đóng góp chính |
+|:-----------|:--------|:---------------|
+| [Hieusin18](https://github.com/Hieusin18) | Dev 1 — Backend Lead | Auth API, CI/CD, Docker, Prometheus/Grafana |
+| [hoangvu-ai](https://github.com/hoangvu-ai) | Dev 2 — Backend | Swagger docs, unit tests (auth/diary/group), feed API |
+| [caohuongquynh](https://github.com/caohuongquynh) | Dev 3 — Mobile | Group Check-in, ProfileScreen, mobile features |
+| [thanhnhe00](https://github.com/thanhnhe00) | Dev 4 — Mobile UI | UI Minimal Light redesign, Capsule Tab, mobile fixes |
+| [ngocanh-dev2209](https://github.com/ngocanh-dev2209) | Dev 5 — DevOps | Docker, Nginx, monitoring, deploy scripts |
 
 ---
 
