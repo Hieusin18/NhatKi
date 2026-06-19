@@ -106,7 +106,7 @@ curl http://localhost/health   # -> {"status":"ok"}
 **REST API (gốc repo):**
 ```bash
 npm install
-cp deploy/.env.production.example .env   # đổi DB_HOST=127.0.0.1
+cp deploy/.env.production.example .env
 npm run migrate && npm run seed
 npm run dev   # nodemon src/app.js · port 4000
 ```
@@ -115,7 +115,7 @@ npm run dev   # nodemon src/app.js · port 4000
 ```bash
 cd backend
 npm install
-npm run dev   # port 5000
+npm run dev   
 ```
 
 **Mobile:**
@@ -163,18 +163,18 @@ git push origin v1.0.0
 
 ```text
 NhatKi/
-├── src/               # REST API (Express + Sequelize)
+├── src/             
 │   ├── app.js
 │   ├── routes/
 │   ├── models/
 │   ├── middlewares/
 │   └── migrations/
-├── backend/           # Realtime service (Socket.io + Prisma)
+├── backend/         
 │   └── app.js
-├── mobile/            # Mobile app (Expo / React Native)
+├── mobile/          
 │   ├── app/
 │   └── src/
-├── deploy/            # Docker, Nginx, Monitoring, Scripts
+├── deploy/            
 │   ├── docker-compose.prod.yml
 │   ├── .env.production.example
 │   ├── DEPLOYMENT.md
@@ -182,7 +182,7 @@ NhatKi/
 ├── .github/
 │   └── workflows/
 │       └── deploy-prod.yml
-├── SRS.md             # Tài liệu đặc tả yêu cầu
+├── SRS.md            
 └── CHANGELOG.md
 ```
 
@@ -199,9 +199,9 @@ Xem [`CHANGELOG.md`](./CHANGELOG.md) để theo dõi lịch sử các phiên b�
 | Vai trò | Thành viên |
 |:--------|:-----------|
 | Dev 1 — Backend Lead | [Hieusin18](https://github.com/Hieusin18) |
-| Dev 2 — Backend | [cần bổ sung] |
-| Dev 3 — Mobile | [cần bổ sung] |
-| Dev 4 — Mobile UI | [cần bổ sung] |
-| Dev 5 — DevOps | [cần bổ sung] |
+| Dev 2 — Backend | [hoangvu-ai] |
+| Dev 3 — Mobile | [caohuongquynh] |
+| Dev 4 — Mobile UI | [thanhnhe00] |
+| Dev 5 — DevOps | [ngocanh-dev2209] |
 
-> Điền GitHub username thực tế của từng thành viên.
+
