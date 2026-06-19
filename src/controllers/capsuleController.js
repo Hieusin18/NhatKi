@@ -1,6 +1,11 @@
 const { Capsule, Media, User } = require('../models/index');
 const { Op }                   = require('sequelize');
 
+/**
+ * Format milliseconds into a human-readable countdown string.
+ * @param {number} ms - Remaining milliseconds
+ * @returns {string} e.g. "2d 3h 15m" or "45s"
+ */
 function formatCountdown(ms) {
   const days    = Math.floor(ms / (1000 * 60 * 60 * 24));
   const hours   = Math.floor((ms % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
@@ -12,7 +17,12 @@ function formatCountdown(ms) {
   return `${seconds}s`;
 }
 
-// POST /capsules
+/**
+ * POST /capsules
+ * Create a locked Time Capsule scheduled to open at a future date.
+ * @param {import('express').Request}  req - body: { title, content, openAt, receiverId? }
+ * @param {import('express').Response} res - 201 { data: Capsule } | 400 | 500
+ */
 exports.create = async (req, res) => {
   try {
     const { title, content, openAt, receiverId } = req.body;

@@ -2,7 +2,12 @@ const { Op }                    = require('sequelize');
 const { DiaryEntry, Tag, User } = require('../models/index');
 const { buildVisibilityWhere }  = require('../helpers/visibilityFilter');
 
-// POST /diary
+/**
+ * POST /diary
+ * Create a new diary entry for the authenticated user.
+ * @param {import('express').Request}  req - body: { title, content, mood, visibility, entryDate }
+ * @param {import('express').Response} res - 201 { data: DiaryEntry } | 400 | 500
+ */
 exports.create = async (req, res) => {
   try {
     const { title, content, mood, visibility, entryDate } = req.body;
@@ -19,7 +24,12 @@ exports.create = async (req, res) => {
   }
 };
 
-// GET /diary/timeline
+/**
+ * GET /diary/timeline
+ * Return paginated diary entries visible to the requester.
+ * @param {import('express').Request}  req - query: { userId?, page?, limit? }
+ * @param {import('express').Response} res - 200 { data, total, page, totalPages } | 500
+ */
 exports.getTimeline = async (req, res) => {
   try {
     const requesterId = req.user.id;

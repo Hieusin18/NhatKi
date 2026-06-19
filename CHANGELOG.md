@@ -31,8 +31,16 @@ Bản phát hành MVP đầu tiên của Setlog — ứng dụng nhật ký cá 
 - Media lưu trên Cloudinary; push notification qua FCM
 - `.env.production.example` cung cấp sẵn cho onboarding
 
-### Known Issues
-- Realtime service và REST API đang dùng hai ORM khác nhau (Sequelize vs Prisma) — sẽ thống nhất trong v1.1.0
+### Breaking Changes
+- Đây là bản phát hành đầu tiên (v1.0.0), không có API cũ nào bị phá vỡ.
+- Schema database được khởi tạo mới qua `npm run migrate`. Không tương thích với bất kỳ schema pre-release nào trước đó.
+
+### Backward Compatibility
+- REST API (`/auth`, `/diary`, `/feed`, `/capsules`, `/groups`) ổn định từ v1.0.0 trở đi.
+- Các breaking changes trong tương lai sẽ được đánh dấu rõ ràng trong CHANGELOG và tăng MAJOR version (v2.x.x).
+
+### Known Issues & Technical Debt
+- **ORM inconsistency (Technical Debt):** Realtime service dùng Prisma trong khi REST API dùng Sequelize — hai stack ORM song song. Cả hai đều kết nối cùng MySQL 8, không xung đột về runtime nhưng tăng độ phức tạp bảo trì. **Kế hoạch:** thống nhất về Prisma trong v1.1.0.
 - Admin Panel chưa hoàn thiện (dashboard và kiểm duyệt nội dung)
 - Xuất dữ liệu nhật ký chưa triển khai
 
@@ -40,11 +48,11 @@ Bản phát hành MVP đầu tiên của Setlog — ứng dụng nhật ký cá 
 
 ## [Unreleased]
 
-### Planned
-- Thống nhất ORM về một stack duy nhất
-- Hoàn thiện Admin Panel
+### Planned for v1.1.0
+- **[Breaking for Realtime]** Thống nhất ORM: migrate Sequelize → Prisma cho REST API
+- Hoàn thiện Admin Panel (dashboard, kiểm duyệt)
 - Tính năng xuất dữ liệu nhật ký (PDF/JSON)
-- Nhắc nhở viết nhật ký hằng ngày (push notification)
+- Nhắc nhở viết nhật ký hằng ngày (push notification FCM)
 
 ---
 

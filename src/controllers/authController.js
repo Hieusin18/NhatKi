@@ -1,11 +1,21 @@
 const jwt      = require('jsonwebtoken');
 const { User } = require('../models/index');
 
+/**
+ * Sign a JWT for the given user id.
+ * @param {number} id - User primary key
+ * @returns {string} Signed JWT
+ */
 const makeToken = (id) => jwt.sign({ id }, process.env.JWT_SECRET, {
   expiresIn: process.env.JWT_EXPIRES_IN || '7d'
 });
 
-// POST /auth/register
+/**
+ * POST /auth/register
+ * Create a new user account and return a JWT.
+ * @param {import('express').Request}  req - body: { username, email, password }
+ * @param {import('express').Response} res - 201 { token, user } | 400 | 409 | 500
+ */
 exports.register = async (req, res) => {
   try {
     const { username, email, password } = req.body;
@@ -22,7 +32,12 @@ exports.register = async (req, res) => {
   }
 };
 
-// POST /auth/login
+/**
+ * POST /auth/login
+ * Authenticate user credentials and return a JWT.
+ * @param {import('express').Request}  req - body: { email, password }
+ * @param {import('express').Response} res - 200 { token, user } | 400 | 401 | 500
+ */
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
