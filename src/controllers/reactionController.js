@@ -18,7 +18,12 @@ const Comment = sequelize.define('Comment', {
 
 sequelize.sync({ alter: true });
 
-// POST /diary/:diaryId/reactions
+/**
+ * POST /diary/:diaryId/reactions
+ * Add or update a reaction (like/love/sad/haha/angry) on a diary entry.
+ * @param {import('express').Request}  req - params: { diaryId }, body: { type? }
+ * @param {import('express').Response} res - 201 { data: Reaction } | 400 | 404 | 500
+ */
 exports.addReaction = async (req, res) => {
   try {
     const { diaryId } = req.params;
@@ -72,7 +77,12 @@ exports.getReactions = async (req, res) => {
   }
 };
 
-// POST /diary/:diaryId/comments
+/**
+ * POST /diary/:diaryId/comments
+ * Add a comment to a diary entry.
+ * @param {import('express').Request}  req - params: { diaryId }, body: { content }
+ * @param {import('express').Response} res - 201 { data: Comment } | 400 | 404 | 500
+ */
 exports.addComment = async (req, res) => {
   try {
     const { diaryId } = req.params;

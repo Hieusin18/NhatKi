@@ -12,9 +12,15 @@ const prisma = new PrismaClient({
   },
 });
 
+/** Generate a random 6-character uppercase invite code. @returns {string} */
 const genCode = () => Math.random().toString(36).substring(2, 8).toUpperCase();
 
-// POST /groups
+/**
+ * POST /groups
+ * Create a new group with the authenticated user as owner.
+ * @param {import('express').Request}  req - body: { name, description? }
+ * @param {import('express').Response} res - 201 { data: Group } | 400 | 500
+ */
 exports.create = async (req, res) => {
   try {
     const { name, description } = req.body;

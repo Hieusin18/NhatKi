@@ -2,7 +2,12 @@ const { Op }                             = require('sequelize');
 const { DiaryEntry, Tag, User, GroupMember } = require('../models/index');
 const { buildVisibilityWhere }           = require('../helpers/visibilityFilter');
 
-// GET /feed/timeline
+/**
+ * GET /feed/timeline
+ * Return paginated diary entries visible to the authenticated user across all groups.
+ * @param {import('express').Request}  req - query: { page?, limit? }
+ * @param {import('express').Response} res - 200 { data, meta } | 500
+ */
 exports.getTimeline = async (req, res) => {
   try {
     const page   = Math.max(1, parseInt(req.query.page)  || 1);
@@ -29,7 +34,12 @@ exports.getTimeline = async (req, res) => {
   }
 };
 
-// GET /feed/group/:groupId
+/**
+ * GET /feed/group/:groupId
+ * Return paginated diary entries for a specific group (requester must be a member).
+ * @param {import('express').Request}  req - params: { groupId }, query: { page?, limit? }
+ * @param {import('express').Response} res - 200 { data, meta } | 403 | 500
+ */
 exports.getGroupFeed = async (req, res) => {
   try {
     const { groupId } = req.params;

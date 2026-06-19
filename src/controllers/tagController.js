@@ -2,7 +2,12 @@ const { Op }                   = require('sequelize');
 const { Tag, DiaryEntry }      = require('../models/index');
 const { buildVisibilityWhere } = require('../helpers/visibilityFilter');
 
-// GET /tags
+/**
+ * GET /tags
+ * Return all tags belonging to the authenticated user.
+ * @param {import('express').Request}  req
+ * @param {import('express').Response} res - 200 { data: Tag[] } | 500
+ */
 exports.getAll = async (req, res) => {
   try {
     const tags = await Tag.findAll({
@@ -15,7 +20,12 @@ exports.getAll = async (req, res) => {
   }
 };
 
-// POST /diary/:diaryId/tags
+/**
+ * POST /diary/:diaryId/tags
+ * Find-or-create a tag and attach it to the given diary entry.
+ * @param {import('express').Request}  req - params: { diaryId }, body: { tag_name }
+ * @param {import('express').Response} res - 201 { data: Tag } | 400 | 404 | 500
+ */
 exports.attachTag = async (req, res) => {
   try {
     const { diaryId }  = req.params;
