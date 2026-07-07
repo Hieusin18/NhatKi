@@ -29,6 +29,8 @@ app.use('/auth', require('./routes/auth'));
 app.use('/groups', require('./routes/groups'));
 app.use('/api/groups', require('./routes/groups'));
 app.use('/diary', require('./routes/diary'));
+const capsuleRoutes = require('./routes/capsules');
+app.use('/capsules', capsuleRoutes);
 
 // 404 handler
 app.use((req, res) => res.status(404).json({ message: 'Route not found.' }));
