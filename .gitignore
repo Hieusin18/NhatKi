@@ -1,50 +1,8 @@
-# Dependencies
 node_modules/
-**/node_modules/
-
-# Env & secrets
-.env
-.env.*
-!.env.example
-!deploy/.env.production.example
-
-# Logs & build
-*.log
-npm-debug.log
-yarn-error.log
-dist/
 build/
+dist/
 coverage/
-
-# OS / editor
 .DS_Store
-.vscode/
-.idea/
-*.iml
-
-# Mobile/native build artifacts
-DerivedData/
-xcuserdata/
-*.xcuserstate
-*.ipa
-*.jsbundle
-.gradle/
-.cxx/
-local.properties
-*.hprof
-*.keystore
-!debug.keystore
-.kotlin/
-**/Pods/
-/vendor/bundle/
-
-# Fastlane
-**/fastlane/report.xml
-**/fastlane/Preview.html
-**/fastlane/screenshots/
-**/fastlane/test_output/
-
-# DevOps runtime
-deploy/nginx/certs/
-deploy/backups/
-deploy/grafana-data/
+*.log
+.env*
+!.env.example

@@ -1,0 +1,11 @@
+{
+  "name": "Remix SetlogProject",
+  "description": "Mạng xã hội chia sẻ video 2 giây độc đáo SetLog. Tạo phòng nhóm tối đa 12 người, ghi lại khoảnh khắc mỗi giờ và tự động ghép thành nhật ký video daily vlog sống động.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

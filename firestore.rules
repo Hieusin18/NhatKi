@@ -1,0 +1,88 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Users collection
+    match /users/{userId} {
+      allow read: if true;
+      allow create, update: if isSignedIn();
+      allow delete: if isOwner(userId);
+
+      // Sub-collection for active sessions
+      match /sessions/{sessionId} {
+        allow read, write: if isSignedIn();
+      }
+
+      // Sub-collection for friends
+      match /friends/{friendId} {
+        allow read: if isSignedIn();
+        allow write: if isSignedIn();
+      }
+    }
+
+    // Moment Posts collection
+    match /posts/{postId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
+    }
+
+    // Clips collection
+    match /clips/{clipId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
+    }
+
+    // Friend Requests collection
+    match /friendRequests/{requestId} {
+      allow read, write: if isSignedIn();
+    }
+
+    // Notifications collection
+    match /notifications/{notificationId} {
+      allow read, write: if isSignedIn();
+    }
+
+    // Group Log Rooms collection (REQ-03, REQ-14)
+    match /logRooms/{roomId} {
+      allow read, write: if isSignedIn();
+
+      // Room Clips subcollection
+      match /clips/{clipId} {
+        allow read, write: if isSignedIn();
+      }
+    }
+
+    // Media Processing Jobs collection (private job logs)
+    match /mediaJobs/{jobId} {
+      allow read, write: if isSignedIn();
+    }
+
+    // Logs collection
+    match /logs/{logId} {
+      allow read, write: if isSignedIn();
+    }
+
+    // Chats collection
+    match /chats/{chatId} {
+      allow read, write: if isSignedIn();
+
+      match /messages/{messageId} {
+        allow read, write: if isSignedIn();
+      }
+    }
+  }
+}
+

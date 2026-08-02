@@ -1,34 +1,39 @@
 {
-  "name": "diary-backend",
-  "version": "1.0.0",
-  "description": "Personal Diary App Backend",
-  "main": "src/app.js",
+  "name": "react-example",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
   "scripts": {
-    "start": "node src/app.js",
-    "dev": "nodemon src/app.js",
-    "migrate": "node src/migrations/run.js",
-    "seed": "node src/migrations/seed.js",
-    "test": "jest --testEnvironment=node --forceExit --runInBand"
-  },
-  "jest": {
-    "testMatch": [
-      "**/tests/**/*.test.js"
-    ]
+    "dev": "tsx server.ts",
+    "build": "vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
+    "start": "node dist/server.cjs",
+    "preview": "vite preview",
+    "clean": "rm -rf dist server.cjs",
+    "lint": "tsc --noEmit"
   },
   "dependencies": {
-    "bcryptjs": "^2.4.3",
-    "dotenv": "^16.0.3",
-    "express": "^4.18.2",
-    "jsonwebtoken": "^9.0.0",
-    "mysql2": "^3.3.0",
-    "sequelize": "^6.31.1",
-    "swagger-jsdoc": "^6.3.0",
-    "swagger-ui-express": "^5.0.1",
-    "uuid": "^9.0.0"
+    "@aws-sdk/client-s3": "^3.1098.0",
+    "@google/genai": "^2.4.0",
+    "@tailwindcss/vite": "^4.1.14",
+    "@vitejs/plugin-react": "^5.0.4",
+    "dotenv": "^17.2.3",
+    "express": "^4.21.2",
+    "firebase": "^12.16.0",
+    "lucide-react": "^0.546.0",
+    "motion": "^12.23.24",
+    "react": "^19.0.1",
+    "react-dom": "^19.0.1",
+    "sharp": "^0.35.3",
+    "vite": "^6.2.3"
   },
   "devDependencies": {
-    "jest": "^30.4.2",
-    "nodemon": "^2.0.22",
-    "supertest": "^7.2.2"
+    "@types/node": "^22.14.0",
+    "autoprefixer": "^10.4.21",
+    "esbuild": "^0.25.0",
+    "tailwindcss": "^4.1.14",
+    "tsx": "^4.21.0",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.3",
+    "@types/express": "^4.17.21"
   }
 }

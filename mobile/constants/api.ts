@@ -1,1 +1,0 @@
-export const API_BASE_URL = 'https://nhatki-production.up.railway.app/api';

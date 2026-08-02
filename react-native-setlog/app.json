@@ -1,0 +1,32 @@
+{
+  "expo": {
+    "name": "SetLog",
+    "slug": "setlog-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "scheme": "setlog",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.setlog.mobile",
+      "infoPlist": {
+        "NSCameraUsageDescription": "SetLog cần quyền camera để quay khoảnh khắc 2 giây hàng ngày.",
+        "NSMicrophoneUsageDescription": "SetLog cần quyền micro để ghi âm thanh cho clip 2 giây."
+      }
+    },
+    "android": {
+      "package": "com.setlog.mobile",
+      "permissions": ["CAMERA", "RECORD_AUDIO"]
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "SetLog cần quyền camera để quay khoảnh khắc 2 giây.",
+          "microphonePermission": "SetLog cần quyền micro để ghi âm cho clip."
+        }
+      ],
+      "expo-notifications"
+    ]
+  }
+}
