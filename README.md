@@ -237,6 +237,3 @@ Dự án đang trong giai đoạn **MVP**, tập trung hoàn thiện các luồn
 4. Push lên nhánh: `git push origin feature/ten-tinh-nang`
 5. Mở Pull Request
 
-## License
-
-Dự án phục vụ mục đích học tập / báo cáo môn học. *(Cập nhật lại mục này nếu nhóm chọn giấy phép mã nguồn mở cụ thể, ví dụ MIT.)*
